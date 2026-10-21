@@ -53,7 +53,7 @@ Belly.stageConfig = function (stage) {
   return {
     target: 10 + i * 5,
     allowedMiss: 3,
-    fallSpeed: Math.min(1.2, 0.45 + i * 0.07), // 화면 높이/초
+    fallSpeed: Math.min(1.6, 0.94 + i * 0.07), // 화면 높이/초
     spawnMs: Math.max(350, 700 - i * 70),
   };
 };
@@ -161,7 +161,7 @@ const BEAR_ASPECT = 524 / 694; // bear.png 가로/세로
 const BEAR_MOUTH_Y = 0.36;     // 그림 안에서 입이 있는 세로 위치 (비율)
 
 function drawBear(cx, mouthY, ratio) {
-  const h = H * 0.22 * (1 + Belly.MAX_GROW * ratio);
+  const h = H * 0.11 * (1 + Belly.MAX_GROW * ratio);
   const w = h * BEAR_ASPECT;
   ctx.drawImage(bearImg, cx - w / 2, mouthY - h * BEAR_MOUTH_Y, w, h);
 }
