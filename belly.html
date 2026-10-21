@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>뱃살 키우기</title>
+<style>
+:root { --bg: #0b0f1a; --sky: #b3c3d9; --text: #e6ecff; --muted: #8a96b8; --accent: #ffb3cc; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif; }
+body { display: flex; justify-content: center; padding: 12px; overscroll-behavior: none; }
+.app { width: 100%; max-width: 480px; height: 100vh; height: 100dvh; display: flex; flex-direction: column; gap: 10px; }
+.hud { display: flex; justify-content: space-between; align-items: center; font-size: 15px; gap: 8px; }
+.hud span { color: var(--muted); }
+.hud b { font-variant-numeric: tabular-nums; }
+.stage { position: relative; flex: 1; min-height: 0; border-radius: 16px; overflow: hidden;
+  background: var(--sky); touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; text-align: center; gap: 10px; padding: 16px;
+  background: rgba(11, 15, 26, .35); }
+.overlay[hidden] { display: none; }
+.overlay h1 { margin: 0; font-size: 28px; color: var(--accent); text-shadow: 0 0 12px rgba(255, 179, 204, .5); }
+.overlay p { margin: 0; color: #eef3ff; white-space: pre-line; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="hud">
+    <div><span>스테이지</span> <b id="stageNo">1</b></div>
+    <div><span>먹음</span> <b id="eaten">0</b>/<b id="target">10</b></div>
+    <div><span>놓침</span> <b id="missed">0</b>/<b id="allowed">3</b></div>
+  </div>
+  <div class="stage" id="stage">
+    <canvas id="board"></canvas>
+    <div class="overlay" id="overlay">
+      <h1 id="ovTitle"></h1>
+      <p id="ovText"></p>
+    </div>
+  </div>
+</div>
+<script>
+// <logic>
+const Belly = {};
+Belly.MAX_SPEED = 0.8;     // 최고 이동 속도 (화면 너비/초)
+Belly.CATCH_HALF = 0.12;   // 받을 수 있는 좌우 반경 (화면 너비 기준)
+Belly.X_MIN = 0.25;        // 캐릭터가 갈 수 있는 좌우 범위 (몸이 화면 밖으로 안 나가게)
+Belly.X_MAX = 0.75;
+Belly.PLAYER_Y = 0.86;     // 캐릭터가 음식을 받는 높이 (화면 높이 기준)
+Belly.FOOD_KINDS = 4;
+Belly.MAX_GROW = 0.3;      // 목표를 다 먹었을 때 몸이 커지는 비율
+
+Belly.stageConfig = function (stage) {
+  const i = stage - 1;
+  return {
+    target: 10 + i * 5,
+    allowedMiss: 3,
+    fallSpeed: Math.min(0.9, 0.3 + i * 0.05), // 화면 높이/초
+    spawnMs: Math.max(450, 1000 - i * 80),
+  };
+};
+
+Belly.createState = function (stage) {
+  const n = stage || 1;
+  return {
+    stage: n,
+    config: Belly.stageConfig(n),
+    status: 'ready',
+    playerX: 0.5,
+    targetX: 0.5,
+    foods: [],
+    spawnAcc: 0,
+    eaten: 0,
+    missed: 0,
+  };
+};
+
+Belly.begin = function (state) {
+  state.status = 'running';
+  return state;
+};
+
+Belly.nextStage = function (state) {
+  return Belly.begin(Belly.createState(state.stage + 1));
+};
+
+Belly.moveToward = function (current, target, maxDelta) {
+  const d = target - current;
+  if (Math.abs(d) <= maxDelta) return target;
+  return current + Math.sign(d) * maxDelta;
+};
+
+Belly.clampX = function (v) {
+  return Math.min(Belly.X_MAX, Math.max(Belly.X_MIN, v));
+};
+
+Belly.dragTargetX = function (startPlayerX, dxPx, widthPx) {
+  return Belly.clampX(startPlayerX + dxPx / widthPx);
+};
+
+Belly.update = function (state, dtMs, rng) {
+  if (state.status !== 'running') return state;
+  const sec = dtMs / 1000;
+  const cfg = state.config;
+
+  state.playerX = Belly.moveToward(state.playerX, state.targetX, Belly.MAX_SPEED * sec);
+
+  state.spawnAcc += dtMs;
+  while (state.spawnAcc >= cfg.spawnMs) {
+    state.spawnAcc -= cfg.spawnMs;
+    state.foods.push({
+      x: 0.1 + rng() * 0.8,
+      y: 0,
+      kind: Math.floor(rng() * Belly.FOOD_KINDS),
+    });
+  }
+
+  const remain = [];
+  for (const f of state.foods) {
+    f.y += cfg.fallSpeed * sec;
+    if (f.y < Belly.PLAYER_Y) { remain.push(f); continue; }
+    if (Math.abs(f.x - state.playerX) <= Belly.CATCH_HALF) state.eaten++;
+    else state.missed++;
+  }
+  state.foods = remain;
+
+  if (state.missed > cfg.allowedMiss) state.status = 'over';
+  else if (state.eaten >= cfg.target) state.status = 'clear';
+  return state;
+};
+// </logic>
+
+const { createState, update, nextStage, dragTargetX, begin } = Belly;
+
+const FOOD_EMOJI = ['🍗', '🍕', '🍔', '🍟'];
+const TAP_SLOP = 8;
+
+const stageEl = document.getElementById('stage');
+const canvas = document.getElementById('board');
+const ctx = canvas.getContext('2d');
+const overlay = document.getElementById('overlay');
+const ovTitle = document.getElementById('ovTitle');
+const ovText = document.getElementById('ovText');
+const stageNoEl = document.getElementById('stageNo');
+const eatenEl = document.getElementById('eaten');
+const targetEl = document.getElementById('target');
+const missedEl = document.getElementById('missed');
+const allowedEl = document.getElementById('allowed');
+
+let W = 0;
+let H = 0;
+let state = createState(1);
+
+function resize() {
+  const rect = stageEl.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  W = rect.width;
+  H = rect.height;
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function drawBear(cx, bottomY, ratio, u) {
+  const g = 1 + Belly.MAX_GROW * ratio;
+  const rx = u * 0.85 * g;
+  const ry = u * 0.75 * g;
+  const pantsY = bottomY - u * 0.5;
+  const pantsRx = rx * 0.8;
+  const pantsRy = u * 0.4 * g;
+  const bodyCy = pantsY - pantsRy - ry * 0.9;
+
+  ctx.lineWidth = Math.max(2, u * 0.05);
+  ctx.strokeStyle = '#111';
+  ctx.lineCap = 'round';
+
+  const shape = (x, y, sx, sy, fill) => {
+    ctx.beginPath();
+    ctx.ellipse(x, y, sx, sy, 0, 0, Math.PI * 2);
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.stroke();
+  };
+
+  shape(cx - pantsRx * 0.5, bottomY - u * 0.12, u * 0.2, u * 0.12, '#9aa1ad');
+  shape(cx + pantsRx * 0.5, bottomY - u * 0.12, u * 0.2, u * 0.12, '#9aa1ad');
+  shape(cx - rx * 0.75, bodyCy - ry * 0.8, u * 0.2, u * 0.2, '#e0789c');
+  shape(cx + rx * 0.75, bodyCy - ry * 0.8, u * 0.2, u * 0.2, '#e0789c');
+
+  const grad = ctx.createRadialGradient(cx, bodyCy - ry * 0.15, ry * 0.1, cx, bodyCy, ry * 1.1);
+  grad.addColorStop(0, '#fff3a6');
+  grad.addColorStop(0.45, '#f28fb1');
+  grad.addColorStop(1, '#d86a93');
+  shape(cx, bodyCy, rx, ry, grad);
+
+  shape(cx, pantsY, pantsRx, pantsRy, '#9aa1ad');
+
+  for (const s of [-1, 1]) {
+    ctx.beginPath();
+    ctx.arc(cx + s * rx * 0.38, bodyCy - ry * 0.12, u * 0.09, Math.PI * 1.15, Math.PI * 1.85);
+    ctx.stroke();
+  }
+  shape(cx, bodyCy + ry * 0.35, u * 0.14, u * 0.15, '#fff');
+  shape(cx, bodyCy + ry * 0.42, u * 0.07, u * 0.08, '#e0362c');
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  const u = Math.min(W * 0.2, H * 0.13);
+
+  ctx.font = `${Math.round(u * 0.55)}px "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (const f of state.foods) {
+    ctx.fillText(FOOD_EMOJI[f.kind], f.x * W, f.y * H);
+  }
+
+  drawBear(state.playerX * W, H * 0.98, state.eaten / state.config.target, u);
+}
+
+function sync() {
+  stageNoEl.textContent = state.stage;
+  eatenEl.textContent = state.eaten;
+  targetEl.textContent = state.config.target;
+  missedEl.textContent = state.missed;
+  allowedEl.textContent = state.config.allowedMiss;
+
+  const texts = {
+    ready: ['뱃살 키우기', '화면을 좌우로 드래그해서 음식을 받으세요\n탭해서 시작'],
+    clear: [`스테이지 ${state.stage} 클리어!`, '탭해서 다음 스테이지'],
+    over: ['게임 오버', `스테이지 ${state.stage}에서 졌어요\n탭해서 처음부터`],
+  };
+  const t = texts[state.status];
+  overlay.hidden = !t;
+  if (t) {
+    ovTitle.textContent = t[0];
+    ovText.textContent = t[1];
+  }
+}
+
+function primaryAction() {
+  if (state.status === 'ready') state = begin(state);
+  else if (state.status === 'clear') state = nextStage(state);
+  else if (state.status === 'over') state = begin(createState(1));
+}
+
+let drag = null;
+
+stageEl.addEventListener('pointerdown', (e) => {
+  try { stageEl.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+  drag = { startX: e.clientX, startPlayerX: state.playerX, moved: false };
+});
+
+stageEl.addEventListener('pointermove', (e) => {
+  if (!drag || state.status !== 'running') return;
+  const dx = e.clientX - drag.startX;
+  if (Math.abs(dx) > TAP_SLOP) drag.moved = true;
+  state.targetX = dragTargetX(drag.startPlayerX, dx, W);
+});
+
+function endDrag() {
+  if (drag && !drag.moved && state.status !== 'running') primaryAction();
+  if (state.status === 'running') state.targetX = state.playerX;
+  drag = null;
+}
+
+stageEl.addEventListener('pointerup', endDrag);
+stageEl.addEventListener('pointercancel', endDrag);
+window.addEventListener('resize', resize);
+
+let last = 0;
+function frame(t) {
+  const dt = Math.min(t - last, 100);
+  last = t;
+  update(state, dt, Math.random);
+  sync();
+  draw();
+  requestAnimationFrame(frame);
+}
+
+resize();
+sync();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
