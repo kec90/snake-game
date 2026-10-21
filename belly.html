@@ -53,8 +53,8 @@ Belly.stageConfig = function (stage) {
   return {
     target: 10 + i * 5,
     allowedMiss: 3,
-    fallSpeed: Math.min(0.9, 0.3 + i * 0.05), // 화면 높이/초
-    spawnMs: Math.max(450, 1000 - i * 80),
+    fallSpeed: Math.min(1.2, 0.45 + i * 0.07), // 화면 높이/초
+    spawnMs: Math.max(350, 700 - i * 70),
   };
 };
 
@@ -70,6 +70,7 @@ Belly.createState = function (stage) {
     spawnAcc: 0,
     eaten: 0,
     missed: 0,
+    belly: 0,
   };
 };
 
@@ -107,12 +108,17 @@ Belly.update = function (state, dtMs, rng) {
   for (const f of state.foods) {
     f.y += cfg.fallSpeed * sec;
     if (f.y < Belly.PLAYER_Y) { remain.push(f); continue; }
-    if (Math.abs(f.x - state.playerX) <= Belly.CATCH_HALF) state.eaten++;
-    else state.missed++;
+    if (Math.abs(f.x - state.playerX) <= Belly.CATCH_HALF) {
+      state.eaten++;
+      state.belly++;
+    } else {
+      state.missed++;
+      state.belly = Math.max(0, state.belly - 1);
+    }
   }
   state.foods = remain;
 
-  if (state.missed > cfg.allowedMiss) state.status = 'over';
+  if (state.missed >= cfg.allowedMiss) state.status = 'over';
   else if (state.eaten >= cfg.target) state.status = 'clear';
   return state;
 };
@@ -171,7 +177,7 @@ function draw() {
     ctx.fillText(FOOD_EMOJI[f.kind], f.x * W, f.y * H);
   }
 
-  drawBear(state.playerX * W, H * Belly.PLAYER_Y, state.eaten / state.config.target);
+  drawBear(state.playerX * W, H * Belly.PLAYER_Y, state.belly / state.config.target);
 }
 
 function sync() {
