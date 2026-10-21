@@ -43,10 +43,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 <script>
 // <logic>
 const Belly = {};
-Belly.MAX_SPEED = 0.8;     // 최고 이동 속도 (화면 너비/초)
 Belly.CATCH_HALF = 0.12;   // 받을 수 있는 좌우 반경 (화면 너비 기준)
-Belly.X_MIN = 0.25;        // 캐릭터가 갈 수 있는 좌우 범위 (몸이 화면 밖으로 안 나가게)
-Belly.X_MAX = 0.75;
 Belly.PLAYER_Y = 0.8;      // 캐릭터 입이 음식을 받는 높이 (화면 높이 기준)
 Belly.FOOD_KINDS = 4;
 Belly.MAX_GROW = 0.2;      // 목표를 다 먹었을 때 몸이 커지는 비율
@@ -85,18 +82,8 @@ Belly.nextStage = function (state) {
   return Belly.begin(Belly.createState(state.stage + 1));
 };
 
-Belly.moveToward = function (current, target, maxDelta) {
-  const d = target - current;
-  if (Math.abs(d) <= maxDelta) return target;
-  return current + Math.sign(d) * maxDelta;
-};
-
-Belly.clampX = function (v) {
-  return Math.min(Belly.X_MAX, Math.max(Belly.X_MIN, v));
-};
-
 Belly.dragTargetX = function (startPlayerX, dxPx, widthPx) {
-  return Belly.clampX(startPlayerX + dxPx / widthPx);
+  return startPlayerX + dxPx / widthPx;
 };
 
 Belly.update = function (state, dtMs, rng) {
@@ -104,7 +91,7 @@ Belly.update = function (state, dtMs, rng) {
   const sec = dtMs / 1000;
   const cfg = state.config;
 
-  state.playerX = Belly.moveToward(state.playerX, state.targetX, Belly.MAX_SPEED * sec);
+  state.playerX = state.targetX;
 
   state.spawnAcc += dtMs;
   while (state.spawnAcc >= cfg.spawnMs) {
