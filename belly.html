@@ -47,9 +47,9 @@ Belly.MAX_SPEED = 0.8;     // 최고 이동 속도 (화면 너비/초)
 Belly.CATCH_HALF = 0.12;   // 받을 수 있는 좌우 반경 (화면 너비 기준)
 Belly.X_MIN = 0.25;        // 캐릭터가 갈 수 있는 좌우 범위 (몸이 화면 밖으로 안 나가게)
 Belly.X_MAX = 0.75;
-Belly.PLAYER_Y = 0.86;     // 캐릭터가 음식을 받는 높이 (화면 높이 기준)
+Belly.PLAYER_Y = 0.8;      // 캐릭터 입이 음식을 받는 높이 (화면 높이 기준)
 Belly.FOOD_KINDS = 4;
-Belly.MAX_GROW = 0.3;      // 목표를 다 먹었을 때 몸이 커지는 비율
+Belly.MAX_GROW = 0.2;      // 목표를 다 먹었을 때 몸이 커지는 비율
 
 Belly.stageConfig = function (stage) {
   const i = stage - 1;
@@ -162,47 +162,15 @@ function resize() {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
-function drawBear(cx, bottomY, ratio, u) {
-  const g = 1 + Belly.MAX_GROW * ratio;
-  const rx = u * 0.85 * g;
-  const ry = u * 0.75 * g;
-  const pantsY = bottomY - u * 0.5;
-  const pantsRx = rx * 0.8;
-  const pantsRy = u * 0.4 * g;
-  const bodyCy = pantsY - pantsRy - ry * 0.9;
+const bearImg = new Image();
+bearImg.src = 'bear.png';
+const BEAR_ASPECT = 524 / 694; // bear.png 가로/세로
+const BEAR_MOUTH_Y = 0.36;     // 그림 안에서 입이 있는 세로 위치 (비율)
 
-  ctx.lineWidth = Math.max(2, u * 0.05);
-  ctx.strokeStyle = '#111';
-  ctx.lineCap = 'round';
-
-  const shape = (x, y, sx, sy, fill) => {
-    ctx.beginPath();
-    ctx.ellipse(x, y, sx, sy, 0, 0, Math.PI * 2);
-    ctx.fillStyle = fill;
-    ctx.fill();
-    ctx.stroke();
-  };
-
-  shape(cx - pantsRx * 0.5, bottomY - u * 0.12, u * 0.2, u * 0.12, '#9aa1ad');
-  shape(cx + pantsRx * 0.5, bottomY - u * 0.12, u * 0.2, u * 0.12, '#9aa1ad');
-  shape(cx - rx * 0.75, bodyCy - ry * 0.8, u * 0.2, u * 0.2, '#e0789c');
-  shape(cx + rx * 0.75, bodyCy - ry * 0.8, u * 0.2, u * 0.2, '#e0789c');
-
-  const grad = ctx.createRadialGradient(cx, bodyCy - ry * 0.15, ry * 0.1, cx, bodyCy, ry * 1.1);
-  grad.addColorStop(0, '#fff3a6');
-  grad.addColorStop(0.45, '#f28fb1');
-  grad.addColorStop(1, '#d86a93');
-  shape(cx, bodyCy, rx, ry, grad);
-
-  shape(cx, pantsY, pantsRx, pantsRy, '#9aa1ad');
-
-  for (const s of [-1, 1]) {
-    ctx.beginPath();
-    ctx.arc(cx + s * rx * 0.38, bodyCy - ry * 0.12, u * 0.09, Math.PI * 1.15, Math.PI * 1.85);
-    ctx.stroke();
-  }
-  shape(cx, bodyCy + ry * 0.35, u * 0.14, u * 0.15, '#fff');
-  shape(cx, bodyCy + ry * 0.42, u * 0.07, u * 0.08, '#e0362c');
+function drawBear(cx, mouthY, ratio) {
+  const h = H * 0.22 * (1 + Belly.MAX_GROW * ratio);
+  const w = h * BEAR_ASPECT;
+  ctx.drawImage(bearImg, cx - w / 2, mouthY - h * BEAR_MOUTH_Y, w, h);
 }
 
 function draw() {
@@ -216,7 +184,7 @@ function draw() {
     ctx.fillText(FOOD_EMOJI[f.kind], f.x * W, f.y * H);
   }
 
-  drawBear(state.playerX * W, H * 0.98, state.eaten / state.config.target, u);
+  drawBear(state.playerX * W, H * Belly.PLAYER_Y, state.eaten / state.config.target);
 }
 
 function sync() {
