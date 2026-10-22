@@ -23,6 +23,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
   background: rgba(11, 15, 26, .35); }
 .overlay[hidden] { display: none; }
 .logo { width: min(72%, 280px); height: auto; border-radius: 16px; }
+.logo.small { width: min(50%, 180px); }
 .logo[hidden] { display: none; }
 .overlay h1 { margin: 0; font-size: 28px; color: var(--accent); text-shadow: 0 0 12px rgba(255, 179, 204, .5); }
 .overlay p { margin: 0; color: #eef3ff; white-space: pre-line; line-height: 1.5; }
@@ -52,6 +53,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
     <canvas id="board"></canvas>
     <div class="overlay" id="overlay">
       <img class="logo" id="ovLogo" src="title.jpg" alt="통통배꼽이의 뱃살 꾸미기!">
+      <img class="logo small" id="ovOver" src="gameover.png" alt="게임 오버" hidden>
       <h1 id="ovTitle"></h1>
       <p id="ovText"></p>
       <div class="rank" id="rank" hidden>
@@ -200,6 +202,7 @@ const ctx = canvas.getContext('2d');
 const overlay = document.getElementById('overlay');
 const ovTitle = document.getElementById('ovTitle');
 const ovLogo = document.getElementById('ovLogo');
+const ovOver = document.getElementById('ovOver');
 const ovText = document.getElementById('ovText');
 const stageNoEl = document.getElementById('stageNo');
 const eatenEl = document.getElementById('eaten');
@@ -437,6 +440,7 @@ function sync() {
   const t = texts[state.status];
   overlay.hidden = !t;
   ovLogo.hidden = state.status !== 'ready';
+  ovOver.hidden = state.status !== 'over';
   rankEl.hidden = state.status !== 'over';
   if (t) {
     ovTitle.hidden = state.status === 'ready';
