@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>뱃살 키우기</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap">
 <style>
 :root { --bg: #0b0f1a; --sky: #b3c3d9; --text: #e6ecff; --muted: #8a96b8; --accent: #ffb3cc; }
 * { box-sizing: border-box; }
@@ -27,6 +28,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 .logo[hidden] { display: none; }
 .overlay h1 { margin: 0; font-size: 28px; color: var(--accent); text-shadow: 0 0 12px rgba(255, 179, 204, .5); }
 .overlay p { margin: 0; color: #eef3ff; white-space: pre-line; line-height: 1.5; }
+.overlay p .num { font-family: "Black Han Sans", "Malgun Gothic", sans-serif; font-size: 34px; color: var(--accent); text-shadow: 0 0 10px rgba(255, 179, 204, .5); }
 .rank { width: 100%; max-width: 300px; display: flex; flex-direction: column; gap: 8px; }
 .rank[hidden] { display: none; }
 .rankForm { display: flex; gap: 6px; }
@@ -437,7 +439,7 @@ function sync() {
   const texts = {
     ready: ['뱃살 키우기', '화면을 좌우로 드래그해서 음식을 받으세요\n\n탭해서 시작'],
     clear: [`스테이지 ${state.stage} 클리어!`, '탭해서 다음 스테이지'],
-    over: ['게임 오버', `스테이지 ${state.stage}에서 졌어요\n총 ${Belly.total(state)}개 먹음`],
+    over: ['게임 오버', `스테이지 ${state.stage}에서 졌어요\n\n총 <span class="num">${Belly.total(state)}</span>개 먹음`],
   };
   const t = texts[state.status];
   overlay.hidden = !t;
@@ -448,7 +450,7 @@ function sync() {
   if (t) {
     ovTitle.hidden = state.status === 'ready';
     ovTitle.textContent = t[0];
-    ovText.textContent = t[1];
+    ovText.innerHTML = t[1];
   }
 }
 
