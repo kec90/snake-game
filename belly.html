@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>뱃살 키우기</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap">
 <style>
 :root { --bg: #0b0f1a; --sky: #b3c3d9; --text: #e6ecff; --muted: #8a96b8; --accent: #ffb3cc; }
 * { box-sizing: border-box; }
@@ -22,8 +23,12 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
   justify-content: center; text-align: center; gap: 10px; padding: 16px;
   background: rgba(11, 15, 26, .35); }
 .overlay[hidden] { display: none; }
+.logo { width: min(72%, 280px); height: auto; border-radius: 16px; }
+.logo.small { width: min(50%, 180px); }
+.logo[hidden] { display: none; }
 .overlay h1 { margin: 0; font-size: 28px; color: var(--accent); text-shadow: 0 0 12px rgba(255, 179, 204, .5); }
 .overlay p { margin: 0; color: #eef3ff; white-space: pre-line; line-height: 1.5; }
+.overlay p .num { font-family: "Black Han Sans", "Malgun Gothic", sans-serif; font-size: 34px; color: var(--accent); text-shadow: 0 0 10px rgba(255, 179, 204, .5); }
 .rank { width: 100%; max-width: 300px; display: flex; flex-direction: column; gap: 8px; }
 .rank[hidden] { display: none; }
 .rankForm { display: flex; gap: 6px; }
@@ -49,6 +54,9 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
   <div class="stage" id="stage">
     <canvas id="board"></canvas>
     <div class="overlay" id="overlay">
+      <img class="logo" id="ovLogo" src="title.png" alt="통통배꼽이의 뱃살 꾸미기!">
+      <img class="logo small" id="ovOver" src="gameover.png" alt="게임 오버" hidden>
+      <img class="logo small" id="ovClear" src="clear.png" alt="스테이지 클리어" hidden>
       <h1 id="ovTitle"></h1>
       <p id="ovText"></p>
       <div class="rank" id="rank" hidden>
@@ -196,6 +204,9 @@ const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
 const overlay = document.getElementById('overlay');
 const ovTitle = document.getElementById('ovTitle');
+const ovLogo = document.getElementById('ovLogo');
+const ovOver = document.getElementById('ovOver');
+const ovClear = document.getElementById('ovClear');
 const ovText = document.getElementById('ovText');
 const stageNoEl = document.getElementById('stageNo');
 const eatenEl = document.getElementById('eaten');
@@ -426,16 +437,20 @@ function sync() {
   totalEl.textContent = Belly.total(state);
 
   const texts = {
-    ready: ['뱃살 키우기', '화면을 좌우로 드래그해서 음식을 받으세요\n탭해서 시작'],
+    ready: ['뱃살 키우기', '화면을 좌우로 드래그해서 음식을 받으세요\n\n탭해서 시작'],
     clear: [`스테이지 ${state.stage} 클리어!`, '탭해서 다음 스테이지'],
-    over: ['게임 오버', `스테이지 ${state.stage}에서 졌어요\n총 ${Belly.total(state)}개 먹음`],
+    over: ['게임 오버', `스테이지 ${state.stage}에서 졌어요\n\n총 <span class="num">${Belly.total(state)}</span>개 먹음`],
   };
   const t = texts[state.status];
   overlay.hidden = !t;
+  ovLogo.hidden = state.status !== 'ready';
+  ovOver.hidden = state.status !== 'over';
+  ovClear.hidden = state.status !== 'clear';
   rankEl.hidden = state.status !== 'over';
   if (t) {
+    ovTitle.hidden = state.status === 'ready';
     ovTitle.textContent = t[0];
-    ovText.textContent = t[1];
+    ovText.innerHTML = t[1];
   }
 }
 
