@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>뱃살 키우기</title>
+<style>
+:root { --bg: #0b0f1a; --sky: #b3c3d9; --text: #e6ecff; --muted: #8a96b8; --accent: #ffb3cc; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif; }
+body { display: flex; justify-content: center; padding: 12px; overscroll-behavior: none; }
+.app { width: 100%; max-width: 480px; height: 100vh; height: 100dvh; display: flex; flex-direction: column; gap: 10px; }
+.hud { display: flex; justify-content: space-between; align-items: center; font-size: 15px; gap: 8px; }
+.hud span { color: var(--muted); }
+.hud b { font-variant-numeric: tabular-nums; }
+.stage { position: relative; flex: 1; min-height: 0; border-radius: 16px; overflow: hidden;
+  background: var(--sky); touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; text-align: center; gap: 10px; padding: 16px;
+  background: rgba(11, 15, 26, .35); }
+.overlay[hidden] { display: none; }
+.overlay h1 { margin: 0; font-size: 28px; color: var(--accent); text-shadow: 0 0 12px rgba(255, 179, 204, .5); }
+.overlay p { margin: 0; color: #eef3ff; white-space: pre-line; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="hud">
+    <div><span>스테이지</span> <b id="stageNo">1</b></div>
+    <div><span>먹음</span> <b id="eaten">0</b>/<b id="target">10</b></div>
+    <div><span>놓침</span> <b id="missed">0</b>/<b id="allowed">3</b></div>
+  </div>
+  <div class="stage" id="stage">
+    <canvas id="board"></canvas>
+    <div class="overlay" id="overlay">
+      <h1 id="ovTitle"></h1>
+      <p id="ovText"></p>
+    </div>
+  </div>
+</div>
+<script>
+// <logic>
+const Belly = {};
+Belly.CATCH_HALF = 0.12;   // 받을 수 있는 좌우 반경 (화면 너비 기준)
+Belly.PLAYER_Y = 0.8;      // 캐릭터 입이 음식을 받는 높이 (화면 높이 기준)
+Belly.FOOD_KINDS = 4;
+Belly.MAX_GROW = 0.2;      // 목표를 다 먹었을 때 몸이 커지는 비율
+
+Belly.stageConfig = function (stage) {
+  const i = stage - 1;
+  return {
+    target: 10 + i * 5,
+    allowedMiss: 3,
+    fallSpeed: Math.min(1.6, 0.94 + i * 0.07), // 화면 높이/초
+    spawnMs: Math.max(350, 700 - i * 70),
+  };
+};
+
+Belly.createState = function (stage) {
+  const n = stage || 1;
+  return {
+    stage: n,
+    config: Belly.stageConfig(n),
+    status: 'ready',
+    playerX: 0.5,
+    targetX: 0.5,
+    foods: [],
+    spawnAcc: 0,
+    eaten: 0,
+    missed: 0,
+    belly: 0,
+  };
+};
+
+Belly.begin = function (state) {
+  state.status = 'running';
+  return state;
+};
+
+Belly.nextStage = function (state) {
+  return Belly.begin(Belly.createState(state.stage + 1));
+};
+
+Belly.dragTargetX = function (startPlayerX, dxPx, widthPx) {
+  return startPlayerX + dxPx / widthPx;
+};
+
+Belly.update = function (state, dtMs, rng) {
+  if (state.status !== 'running') return state;
+  const sec = dtMs / 1000;
+  const cfg = state.config;
+
+  state.playerX = state.targetX;
+
+  state.spawnAcc += dtMs;
+  while (state.spawnAcc >= cfg.spawnMs) {
+    state.spawnAcc -= cfg.spawnMs;
+    state.foods.push({
+      x: 0.1 + rng() * 0.8,
+      y: 0,
+      kind: Math.floor(rng() * Belly.FOOD_KINDS),
+    });
+  }
+
+  const remain = [];
+  for (const f of state.foods) {
+    f.y += cfg.fallSpeed * sec;
+    if (f.y < Belly.PLAYER_Y) { remain.push(f); continue; }
+    if (Math.abs(f.x - state.playerX) <= Belly.CATCH_HALF) {
+      state.eaten++;
+      state.belly++;
+    } else {
+      state.missed++;
+      state.belly = Math.max(0, state.belly - 1);
+    }
+  }
+  state.foods = remain;
+
+  if (state.missed >= cfg.allowedMiss) state.status = 'over';
+  else if (state.eaten >= cfg.target) state.status = 'clear';
+  return state;
+};
+// </logic>
+
+const { createState, update, nextStage, dragTargetX, begin } = Belly;
+
+const FOOD_EMOJI = ['🍗', '🍕', '🍔', '🍟'];
+const TAP_SLOP = 8;
+
+const stageEl = document.getElementById('stage');
+const canvas = document.getElementById('board');
+const ctx = canvas.getContext('2d');
+const overlay = document.getElementById('overlay');
+const ovTitle = document.getElementById('ovTitle');
+const ovText = document.getElementById('ovText');
+const stageNoEl = document.getElementById('stageNo');
+const eatenEl = document.getElementById('eaten');
+const targetEl = document.getElementById('target');
+const missedEl = document.getElementById('missed');
+const allowedEl = document.getElementById('allowed');
+
+let W = 0;
+let H = 0;
+let state = createState(1);
+
+function resize() {
+  const rect = stageEl.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  W = rect.width;
+  H = rect.height;
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+const bearImg = new Image();
+bearImg.src = 'bear.png';
+const BEAR_ASPECT = 524 / 694; // bear.png 가로/세로
+const BEAR_MOUTH_Y = 0.36;     // 그림 안에서 입이 있는 세로 위치 (비율)
+
+function drawBear(cx, mouthY, ratio) {
+  const h = H * 0.11 * (1 + Belly.MAX_GROW * ratio);
+  const w = h * BEAR_ASPECT;
+  ctx.drawImage(bearImg, cx - w / 2, mouthY - h * BEAR_MOUTH_Y, w, h);
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  const u = Math.min(W * 0.2, H * 0.13);
+
+  ctx.font = `${Math.round(u * 0.55)}px "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (const f of state.foods) {
+    ctx.fillText(FOOD_EMOJI[f.kind], f.x * W, f.y * H);
+  }
+
+  drawBear(state.playerX * W, H * Belly.PLAYER_Y, state.belly / state.config.target);
+}
+
+function sync() {
+  stageNoEl.textContent = state.stage;
+  eatenEl.textContent = state.eaten;
+  targetEl.textContent = state.config.target;
+  missedEl.textContent = state.missed;
+  allowedEl.textContent = state.config.allowedMiss;
+
+  const texts = {
+    ready: ['뱃살 키우기', '화면을 좌우로 드래그해서 음식을 받으세요\n탭해서 시작'],
+    clear: [`스테이지 ${state.stage} 클리어!`, '탭해서 다음 스테이지'],
+    over: ['게임 오버', `스테이지 ${state.stage}에서 졌어요\n탭해서 처음부터`],
+  };
+  const t = texts[state.status];
+  overlay.hidden = !t;
+  if (t) {
+    ovTitle.textContent = t[0];
+    ovText.textContent = t[1];
+  }
+}
+
+function primaryAction() {
+  if (state.status === 'ready') state = begin(state);
+  else if (state.status === 'clear') state = nextStage(state);
+  else if (state.status === 'over') state = begin(createState(1));
+}
+
+let drag = null;
+
+stageEl.addEventListener('pointerdown', (e) => {
+  try { stageEl.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+  drag = { startX: e.clientX, startPlayerX: state.playerX, moved: false };
+});
+
+stageEl.addEventListener('pointermove', (e) => {
+  if (!drag || state.status !== 'running') return;
+  const dx = e.clientX - drag.startX;
+  if (Math.abs(dx) > TAP_SLOP) drag.moved = true;
+  state.targetX = dragTargetX(drag.startPlayerX, dx, W);
+});
+
+function endDrag() {
+  if (drag && !drag.moved && state.status !== 'running') primaryAction();
+  if (state.status === 'running') state.targetX = state.playerX;
+  drag = null;
+}
+
+stageEl.addEventListener('pointerup', endDrag);
+stageEl.addEventListener('pointercancel', endDrag);
+window.addEventListener('resize', resize);
+
+let last = 0;
+function frame(t) {
+  const dt = Math.min(t - last, 100);
+  last = t;
+  update(state, dt, Math.random);
+  sync();
+  draw();
+  requestAnimationFrame(frame);
+}
+
+resize();
+sync();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
