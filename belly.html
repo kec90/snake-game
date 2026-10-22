@@ -234,9 +234,12 @@ let W = 0;
 let H = 0;
 let state = createState(1);
 
+// 고해상도 폰에서 픽셀 수가 너무 많아지지 않도록 배율을 2로 제한
+const MAX_DPR = 2;
+
 function resize() {
   const rect = stageEl.getBoundingClientRect();
-  const dpr = window.devicePixelRatio || 1;
+  const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
   W = rect.width;
   H = rect.height;
   canvas.width = Math.round(W * dpr);
@@ -393,6 +396,27 @@ function updateFx(dt) {
   flashT = Math.max(0, flashT - dt / 350);
 }
 
+// 음식 이모지는 매 프레임 폰트로 그리지 않고 한 번만 그림으로 만들어 재사용
+let foodSprites = { key: '', list: {} };
+function foodSprite(emoji, fs, cssSize) {
+  const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+  const key = `${fs}|${cssSize}|${dpr}`;
+  if (foodSprites.key !== key) foodSprites = { key, list: {} };
+  if (!foodSprites.list[emoji]) {
+    const c = document.createElement('canvas');
+    c.width = Math.ceil(cssSize * dpr);
+    c.height = c.width;
+    const g = c.getContext('2d');
+    g.scale(dpr, dpr);
+    g.font = `${fs}px "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(emoji, cssSize / 2, cssSize / 2);
+    foodSprites.list[emoji] = c;
+  }
+  return foodSprites.list[emoji];
+}
+
 function drawFx() {
   if (flashT > 0) {
     ctx.fillStyle = `rgba(231, 76, 60, ${0.4 * flashT})`;
@@ -432,25 +456,36 @@ function foodUnit() {
 function draw() {
   ctx.clearRect(0, 0, W, H);
   const u = foodUnit();
+  const fs = Math.round(u * 0.55);
+  const cssSize = Math.ceil(fs * 1.2);
 
-  ctx.font = `${Math.round(u * 0.55)}px "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   for (const f of state.foods) {
-    ctx.fillText(f.syringe ? '💉' : FOOD_EMOJI[f.kind], f.x * W, f.y * H);
+    const sprite = foodSprite(f.syringe ? '💉' : FOOD_EMOJI[f.kind], fs, cssSize);
+    ctx.drawImage(sprite, f.x * W - cssSize / 2, f.y * H - cssSize / 2, cssSize, cssSize);
   }
 
   drawBear(state.playerX * W, H * Belly.PLAYER_Y, Belly.sizeScale(state));
   drawFx();
 }
 
+// 값이 바뀔 때만 DOM을 갱신 (매 프레임 같은 값을 다시 쓰지 않음)
+const shownText = new Map();
+function setText(el, value, asHtml) {
+  if (shownText.get(el) === value) return;
+  shownText.set(el, value);
+  if (asHtml) el.innerHTML = value;
+  else el.textContent = value;
+}
+
 function sync() {
-  stageNoEl.textContent = state.stage;
-  eatenEl.textContent = state.eaten;
-  targetEl.textContent = state.config.target;
-  missedEl.textContent = state.missed;
-  allowedEl.textContent = state.config.allowedMiss;
-  totalEl.textContent = Belly.total(state);
+  setText(stageNoEl, state.stage);
+  setText(eatenEl, state.eaten);
+  setText(targetEl, state.config.target);
+  setText(missedEl, state.missed);
+  setText(allowedEl, state.config.allowedMiss);
+  setText(totalEl, Belly.total(state));
 
   const texts = {
     ready: ['뱃살 키우기', '화면을 좌우로 드래그해서 음식을 받으세요\n\n탭해서 시작'],
@@ -465,8 +500,8 @@ function sync() {
   rankEl.hidden = state.status !== 'over';
   if (t) {
     ovTitle.hidden = state.status === 'ready';
-    ovTitle.textContent = t[0];
-    ovText.innerHTML = t[1];
+    setText(ovTitle, t[0]);
+    setText(ovText, t[1], true);
   }
 }
 
