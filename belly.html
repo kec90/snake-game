@@ -25,6 +25,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 .overlay[hidden] { display: none; }
 .logo { width: min(72%, 280px); height: auto; border-radius: 16px; }
 .logo.small { width: min(50%, 180px); }
+.missFx { position: absolute; width: 26%; max-width: 120px; height: auto; opacity: 0; pointer-events: none; }
 .logo[hidden] { display: none; }
 .overlay h1 { margin: 0; font-size: 28px; color: var(--accent); text-shadow: 0 0 12px rgba(255, 179, 204, .5); }
 .overlay p { margin: 0; color: #eef3ff; white-space: pre-line; line-height: 1.5; }
@@ -53,9 +54,10 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
   </div>
   <div class="stage" id="stage">
     <canvas id="board"></canvas>
+    <img class="missFx" id="missFx" src="gameover.png" alt="" aria-hidden="true">
     <div class="overlay" id="overlay">
       <img class="logo" id="ovLogo" src="title.png" alt="통통배꼽이의 뱃살 꾸미기!">
-      <img class="logo small" id="ovOver" src="gameover.png" alt="게임 오버" hidden>
+      <img class="logo small" id="ovOver" src="rank.png" alt="랭킹" hidden>
       <img class="logo small" id="ovClear" src="clear.png" alt="스테이지 클리어" hidden>
       <h1 id="ovTitle"></h1>
       <p id="ovText"></p>
@@ -207,6 +209,19 @@ const ovTitle = document.getElementById('ovTitle');
 const ovLogo = document.getElementById('ovLogo');
 const ovOver = document.getElementById('ovOver');
 const ovClear = document.getElementById('ovClear');
+const missFx = document.getElementById('missFx');
+
+// 음식을 놓치면 캐릭터 머리 위에 우는 얼굴이 잠깐 떴다 사라짐
+function showMissFx() {
+  missFx.style.left = `${state.playerX * 100}%`;
+  missFx.style.top = `${(Belly.PLAYER_Y - 0.15) * 100}%`;
+  missFx.animate([
+    { opacity: 0, transform: 'translate(-50%, -50%) scale(.3)' },
+    { opacity: 1, transform: 'translate(-50%, -50%) scale(1)', offset: 0.25 },
+    { opacity: 1, transform: 'translate(-50%, -50%) scale(1)', offset: 0.7 },
+    { opacity: 0, transform: 'translate(-50%, -50%) scale(.9)' },
+  ], { duration: 900, easing: 'ease-out' });
+}
 const ovText = document.getElementById('ovText');
 const stageNoEl = document.getElementById('stageNo');
 const eatenEl = document.getElementById('eaten');
@@ -362,6 +377,7 @@ function handleEvents() {
     fx.push({ x: e.x, text: s.text, color: s.color, age: 0 });
     SFX[e.type]();
     if (e.type === 'miss') {
+      showMissFx();
       flashT = 1;
       if (navigator.vibrate) navigator.vibrate(80);
     } else {
@@ -444,7 +460,7 @@ function sync() {
   const t = texts[state.status];
   overlay.hidden = !t;
   ovLogo.hidden = state.status !== 'ready';
-  ovOver.hidden = state.status !== 'over';
+  if (state.status !== 'over') ovOver.hidden = true; // 게임 오버 그림은 onGameOver에서 정함
   ovClear.hidden = state.status !== 'clear';
   rankEl.hidden = state.status !== 'over';
   if (t) {
@@ -536,20 +552,30 @@ async function refreshScores() {
   }
 }
 
+// 10위 안이면 "기억할게" 그림, 아니면 다른 그림
+function showOverImage(inRank) {
+  ovOver.src = inRank ? 'rank.png' : 'rank-out.png';
+  ovOver.hidden = false;
+}
+
 // 순위(10위 안)를 갱신할 수 있을 때만 이름 입력칸을 보여줌
 async function onGameOver() {
   const run = state;
   myEntry = null;
+  ovOver.hidden = true;
   rankForm.hidden = true;
   rankMsg.textContent = '';
   submitBtn.disabled = false;
   submitBtn.textContent = '순위 등록';
   try { nameInput.value = localStorage.getItem(NAME_KEY) || ''; } catch (err) { /* ignore */ }
   const list = await refreshScores();
-  if (run !== state || !list) return; // 그 사이 다시 시작했거나 불러오기 실패
+  if (run !== state) return; // 그 사이 다시 시작함
+  if (!list) { showOverImage(false); return; } // 불러오기 실패
   const score = Belly.total(run);
+  const inRank = score > 0 && (list.length < 10 || score > list[list.length - 1].score);
+  showOverImage(inRank);
   if (score <= 0) return;
-  if (list.length < 10 || score > list[list.length - 1].score) {
+  if (inRank) {
     // 점수가 같으면 더 높은 스테이지가 위, 그래도 같으면 먼저 기록한 사람이 위
     const place = list.filter((s) => s.score > score || (s.score === score && s.stage >= run.stage)).length + 1;
     rankMsg.textContent = `🏆 지금 ${place}위!`;
