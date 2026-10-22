@@ -433,7 +433,7 @@ function sync() {
   totalEl.textContent = Belly.total(state);
 
   const texts = {
-    ready: ['뱃살 키우기', '화면을 좌우로 드래그해서 음식을 받으세요\n탭해서 시작'],
+    ready: ['뱃살 키우기', '화면을 좌우로 드래그해서 음식을 받으세요\n\n탭해서 시작'],
     clear: [`스테이지 ${state.stage} 클리어!`, '탭해서 다음 스테이지'],
     over: ['게임 오버', `스테이지 ${state.stage}에서 졌어요\n총 ${Belly.total(state)}개 먹음`],
   };
