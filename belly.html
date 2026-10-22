@@ -14,6 +14,7 @@ body { display: flex; justify-content: center; padding: 12px; overscroll-behavio
 .hud { display: flex; justify-content: space-between; align-items: center; font-size: 15px; gap: 8px; }
 .hud span { color: var(--muted); }
 .hud b { font-variant-numeric: tabular-nums; }
+.hud button { background: none; border: 0; font-size: 18px; padding: 0 4px; cursor: pointer; }
 .stage { position: relative; flex: 1; min-height: 0; border-radius: 16px; overflow: hidden;
   background: var(--sky); touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
@@ -23,6 +24,17 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 .overlay[hidden] { display: none; }
 .overlay h1 { margin: 0; font-size: 28px; color: var(--accent); text-shadow: 0 0 12px rgba(255, 179, 204, .5); }
 .overlay p { margin: 0; color: #eef3ff; white-space: pre-line; line-height: 1.5; }
+.rank { width: 100%; max-width: 300px; display: flex; flex-direction: column; gap: 8px; }
+.rank[hidden] { display: none; }
+.rankForm { display: flex; gap: 6px; }
+.rankForm[hidden] { display: none; }
+.rankMsg { margin: 0; font-size: 14px; color: var(--accent); }
+.rank input { flex: 1; min-width: 0; padding: 8px 10px; border-radius: 8px; border: 0; font-size: 15px; }
+.rank button { padding: 8px 12px; border-radius: 8px; border: 0; font-size: 15px; font-weight: 600;
+  background: var(--accent); color: #2a1020; cursor: pointer; }
+.rank button:disabled { opacity: .5; cursor: default; }
+.rank ol { margin: 0; padding: 0 0 0 22px; text-align: left; font-size: 14px; line-height: 1.6; color: #eef3ff; max-height: 30vh; overflow: auto; }
+.rank li.me { color: var(--accent); font-weight: 700; }
 </style>
 </head>
 <body>
@@ -31,46 +43,68 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
     <div><span>스테이지</span> <b id="stageNo">1</b></div>
     <div><span>먹음</span> <b id="eaten">0</b>/<b id="target">10</b></div>
     <div><span>놓침</span> <b id="missed">0</b>/<b id="allowed">3</b></div>
+    <div><span>총</span> <b id="total">0</b></div>
+    <button id="mute" type="button" aria-label="소리 켜기/끄기">🔊</button>
   </div>
   <div class="stage" id="stage">
     <canvas id="board"></canvas>
     <div class="overlay" id="overlay">
       <h1 id="ovTitle"></h1>
       <p id="ovText"></p>
+      <div class="rank" id="rank" hidden>
+        <p class="rankMsg" id="rankMsg"></p>
+        <div class="rankForm" id="rankForm" hidden>
+          <input id="nameInput" maxlength="8" placeholder="이름" autocomplete="off">
+          <button id="submitBtn" type="button">순위 등록</button>
+        </div>
+        <ol id="rankList"></ol>
+        <button id="restartBtn" type="button">다시 시작</button>
+      </div>
     </div>
   </div>
 </div>
 <script>
 // <logic>
 const Belly = {};
-Belly.CATCH_HALF = 0.12;   // 받을 수 있는 좌우 반경 (화면 너비 기준)
+Belly.BEAR_H = 0.11;       // 곰 기본 높이 (화면 높이 기준)
+Belly.BEAR_ASPECT = 524 / 694; // bear.png 가로/세로
 Belly.PLAYER_Y = 0.8;      // 캐릭터 입이 음식을 받는 높이 (화면 높이 기준)
-Belly.FOOD_KINDS = 4;
-Belly.MAX_GROW = 0.2;      // 목표를 다 먹었을 때 몸이 커지는 비율
+Belly.FOOD_KINDS = 5;
+Belly.SPAWN_JITTER_MIN = 0.3; // 다음 생성까지 간격 = 스테이지 간격 × (MIN ~ MAX 사이 랜덤)
+Belly.SPAWN_JITTER_MAX = 1.7;
+Belly.SYRINGE_CHANCE = 0.12; // 떨어지는 것 중 주사일 확률
+Belly.MAX_GROW = 0.2;   // 목표를 다 먹었을 때 몸이 커지는 비율
 
 Belly.stageConfig = function (stage) {
   const i = stage - 1;
   return {
     target: 10 + i * 5,
     allowedMiss: 3,
-    fallSpeed: Math.min(1.6, 0.94 + i * 0.07), // 화면 높이/초
-    spawnMs: Math.max(350, 700 - i * 70),
+    fallSpeed: 0.94 + i * 0.07, // 화면 높이/초 (상한 없음)
+    spawnMs: 700 * Math.pow(0.9, i), // 스테이지마다 10%씩 빨라짐 (하한 없음, 0은 되지 않음)
   };
 };
 
-Belly.createState = function (stage) {
+// carried: 이전 스테이지들에서 먹은 개수 (순위는 전체 누적 개수로 매김)
+Belly.createState = function (stage, carried) {
   const n = stage || 1;
   return {
     stage: n,
+    carried: carried || 0,
     config: Belly.stageConfig(n),
     status: 'ready',
     playerX: 0.5,
     targetX: 0.5,
     foods: [],
     spawnAcc: 0,
+    nextSpawnMs: Belly.stageConfig(n).spawnMs,
     eaten: 0,
     missed: 0,
     belly: 0,
+    events: [], // 이번 update에서 일어난 일 (eat / miss / syringe) — 효과음·효과용
+    foodHalf: 0.05,    // 음식 그림의 반폭 (화면 너비 기준, 실제 값은 매 프레임 갱신)
+    screenRatio: 1.35, // 화면 높이/너비 (실제 값은 매 프레임 갱신)
+    shrink: 1, // 주사를 먹을 때마다 몸집 배율이 절반이 됨
   };
 };
 
@@ -80,14 +114,29 @@ Belly.begin = function (state) {
 };
 
 Belly.nextStage = function (state) {
-  return Belly.begin(Belly.createState(state.stage + 1));
+  return Belly.begin(Belly.createState(state.stage + 1, Belly.total(state)));
+};
+
+Belly.total = function (state) {
+  return state.carried + state.eaten;
 };
 
 Belly.dragTargetX = function (startPlayerX, dxPx, widthPx) {
   return startPlayerX + dxPx / widthPx;
 };
 
+// 몸집 배율 (그리는 크기와 받는 범위가 같이 쓴다)
+Belly.sizeScale = function (state) {
+  return (1 + Belly.MAX_GROW * state.belly / state.config.target) * state.shrink;
+};
+
+// 받는 범위 = 화면에 그려지는 곰의 좌우 반폭 (화면 너비 기준 비율)
+Belly.catchHalf = function (state) {
+  return Belly.BEAR_H * Belly.sizeScale(state) * Belly.BEAR_ASPECT / 2 * state.screenRatio;
+};
+
 Belly.update = function (state, dtMs, rng) {
+  state.events = [];
   if (state.status !== 'running') return state;
   const sec = dtMs / 1000;
   const cfg = state.config;
@@ -95,12 +144,16 @@ Belly.update = function (state, dtMs, rng) {
   state.playerX = state.targetX;
 
   state.spawnAcc += dtMs;
-  while (state.spawnAcc >= cfg.spawnMs) {
-    state.spawnAcc -= cfg.spawnMs;
+  while (state.spawnAcc >= state.nextSpawnMs) {
+    state.spawnAcc -= state.nextSpawnMs;
+    state.nextSpawnMs = cfg.spawnMs * (Belly.SPAWN_JITTER_MIN + rng() * (Belly.SPAWN_JITTER_MAX - Belly.SPAWN_JITTER_MIN));
+    const x = 0.1 + rng() * 0.8;
+    const syringe = rng() < Belly.SYRINGE_CHANCE;
     state.foods.push({
-      x: 0.1 + rng() * 0.8,
+      x,
       y: 0,
-      kind: Math.floor(rng() * Belly.FOOD_KINDS),
+      kind: syringe ? -1 : Math.floor(rng() * Belly.FOOD_KINDS),
+      syringe,
     });
   }
 
@@ -108,10 +161,19 @@ Belly.update = function (state, dtMs, rng) {
   for (const f of state.foods) {
     f.y += cfg.fallSpeed * sec;
     if (f.y < Belly.PLAYER_Y) { remain.push(f); continue; }
-    if (Math.abs(f.x - state.playerX) <= Belly.CATCH_HALF) {
+    // 음식 그림의 가장자리가 곰 그림의 폭에 닿으면 받은 것으로 친다
+    const caught = Math.abs(f.x - state.playerX) <= Belly.catchHalf(state) + state.foodHalf;
+    if (f.syringe) {
+      if (caught) {
+        state.shrink /= 2; // 주사: 몸집 절반, 놓쳐도 패널티 없음
+        state.events.push({ type: 'syringe', x: f.x });
+      }
+    } else if (caught) {
       state.eaten++;
       state.belly++;
+      state.events.push({ type: 'eat', x: f.x });
     } else {
+      state.events.push({ type: 'miss', x: f.x });
       state.missed++;
       state.belly = Math.max(0, state.belly - 1);
     }
@@ -126,7 +188,7 @@ Belly.update = function (state, dtMs, rng) {
 
 const { createState, update, nextStage, dragTargetX, begin } = Belly;
 
-const FOOD_EMOJI = ['🍗', '🍕', '🍔', '🍟'];
+const FOOD_EMOJI = ['🍗', '🍕', '🍔', '🍟', '🍣'];
 const TAP_SLOP = 8;
 
 const stageEl = document.getElementById('stage');
@@ -140,6 +202,7 @@ const eatenEl = document.getElementById('eaten');
 const targetEl = document.getElementById('target');
 const missedEl = document.getElementById('missed');
 const allowedEl = document.getElementById('allowed');
+const totalEl = document.getElementById('total');
 
 let W = 0;
 let H = 0;
@@ -157,27 +220,201 @@ function resize() {
 
 const bearImg = new Image();
 bearImg.src = 'bear.png';
-const BEAR_ASPECT = 524 / 694; // bear.png 가로/세로
+const BEAR_ASPECT = Belly.BEAR_ASPECT;
 const BEAR_MOUTH_Y = 0.36;     // 그림 안에서 입이 있는 세로 위치 (비율)
 
-function drawBear(cx, mouthY, ratio) {
-  const h = H * 0.11 * (1 + Belly.MAX_GROW * ratio);
+// ---- 효과음 / 효과 ----
+let audio = null;
+let master = null;
+let bgmBus = null;
+let muted = false;
+function ensureAudio() {
+  if (!audio) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) {
+      audio = new AC();
+      master = audio.createGain();
+      master.gain.value = muted ? 0 : 1;
+      master.connect(audio.destination);
+      bgmBus = audio.createGain();
+      bgmBus.gain.value = 0.3;
+      bgmBus.connect(master);
+    }
+  }
+  if (audio && audio.state === 'suspended') audio.resume();
+}
+
+function tone(freq, start, dur, type, vol, endFreq, bus) {
+  if (!audio) return;
+  const t = audio.currentTime + start;
+  const o = audio.createOscillator();
+  const g = audio.createGain();
+  o.type = type;
+  o.frequency.setValueAtTime(freq, t);
+  if (endFreq) o.frequency.exponentialRampToValueAtTime(endFreq, t + dur);
+  g.gain.setValueAtTime(vol, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.connect(g);
+  g.connect(bus || master);
+  o.start(t);
+  o.stop(t + dur);
+}
+
+// ---- 배경음악: 코드로 만드는 8비트풍 루프 (C - Am - F - G, 140BPM) ----
+const BGM_BPM_BASE = 140; // 스테이지 1 (낙하 속도 0.94) 기준 템포
+const BGM_BPM_MAX = 240;  // 너무 빨라 들리지 않게 되는 걸 막는 상한
+
+// 템포는 현재 스테이지의 낙하 속도에 비례. 반환값은 16분음표 길이(초)
+function bgmStepSec() {
+  const bpm = Math.min(BGM_BPM_MAX, BGM_BPM_BASE * state.config.fallSpeed / Belly.stageConfig(1).fallSpeed);
+  return 60 / bpm / 4;
+}
+const BGM_MELODY = [
+  [72, 0, 76, 0, 79, 0, 76, 0, 72, 0, 76, 79, 84, 0, 79, 0],
+  [69, 0, 72, 0, 76, 0, 72, 0, 69, 0, 72, 76, 81, 0, 76, 0],
+  [65, 0, 69, 0, 72, 0, 69, 0, 65, 0, 69, 72, 77, 0, 72, 0],
+  [67, 0, 71, 0, 74, 0, 71, 0, 67, 71, 74, 0, 79, 0, 74, 0],
+];
+const BGM_BASS = [48, 45, 41, 43];
+const midiHz = (m) => 440 * Math.pow(2, (m - 69) / 12);
+let bgmTimer = null;
+let bgmStep = 0;
+let bgmNext = 0;
+let noiseBuf = null;
+
+function hat(t) {
+  if (!noiseBuf) {
+    noiseBuf = audio.createBuffer(1, audio.sampleRate * 0.05, audio.sampleRate);
+    const d = noiseBuf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  const src = audio.createBufferSource();
+  const g = audio.createGain();
+  src.buffer = noiseBuf;
+  g.gain.setValueAtTime(0.15, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+  src.connect(g);
+  g.connect(bgmBus);
+  src.start(t);
+}
+
+function scheduleStep(step, t, len) {
+  const bar = Math.floor(step / 16) % 4;
+  const i = step % 16;
+  const delay = t - audio.currentTime;
+  const m = BGM_MELODY[bar][i];
+  if (m) tone(midiHz(m), delay, len * 1.8, 'square', 0.14, 0, bgmBus);
+  if (i % 2 === 0) {
+    const root = BGM_BASS[bar] + (i % 4 === 2 ? 12 : 0);
+    tone(midiHz(root), delay, len * 1.6, 'triangle', 0.5, 0, bgmBus);
+  }
+  if (i % 4 === 0) tone(150, delay, 0.12, 'sine', 0.7, 45, bgmBus);
+  if (i % 4 === 2) hat(t);
+}
+
+function startBgm() {
+  if (!audio || bgmTimer) return;
+  bgmNext = audio.currentTime + 0.1;
+  bgmTimer = setInterval(() => {
+    while (bgmNext < audio.currentTime + 0.2) {
+      const len = bgmStepSec();
+      scheduleStep(bgmStep++, bgmNext, len);
+      bgmNext += len;
+    }
+  }, 50);
+}
+
+function stopBgm() {
+  if (bgmTimer) clearInterval(bgmTimer);
+  bgmTimer = null;
+}
+
+const SFX = {
+  eat() { tone(660, 0, 0.09, 'sine', 0.25); tone(990, 0.08, 0.12, 'sine', 0.25); },
+  miss() { tone(220, 0, 0.3, 'sawtooth', 0.2, 80); },
+  syringe() { tone(900, 0, 0.25, 'triangle', 0.25, 300); },
+};
+
+const FX_STYLE = {
+  eat: { text: '냠! +1', color: '#2ecc71' },
+  miss: { text: '놓침!', color: '#e74c3c' },
+  syringe: { text: '💉 절반!', color: '#3498db' },
+};
+
+let fx = [];
+let popT = 0;   // 먹었을 때 곰이 통통 튀는 정도 (1 → 0)
+let flashT = 0; // 놓쳤을 때 화면이 붉게 번쩍이는 정도 (1 → 0)
+
+function handleEvents() {
+  for (const e of state.events) {
+    const s = FX_STYLE[e.type];
+    fx.push({ x: e.x, text: s.text, color: s.color, age: 0 });
+    SFX[e.type]();
+    if (e.type === 'miss') {
+      flashT = 1;
+      if (navigator.vibrate) navigator.vibrate(80);
+    } else {
+      popT = 1;
+    }
+  }
+}
+
+function updateFx(dt) {
+  for (const f of fx) f.age += dt;
+  fx = fx.filter((f) => f.age < 700);
+  popT = Math.max(0, popT - dt / 250);
+  flashT = Math.max(0, flashT - dt / 350);
+}
+
+function drawFx() {
+  if (flashT > 0) {
+    ctx.fillStyle = `rgba(231, 76, 60, ${0.4 * flashT})`;
+    ctx.fillRect(0, 0, W, H);
+  }
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `bold ${Math.round(Math.min(W * 0.07, 30))}px system-ui, "Malgun Gothic", sans-serif`;
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = 'rgba(255, 255, 255, .9)';
+  for (const f of fx) {
+    const p = f.age / 700;
+    const y = H * Belly.PLAYER_Y - H * 0.08 - p * H * 0.08;
+    ctx.globalAlpha = 1 - p;
+    ctx.strokeText(f.text, Math.min(W - 40, Math.max(40, f.x * W)), y);
+    ctx.fillStyle = f.color;
+    ctx.fillText(f.text, Math.min(W - 40, Math.max(40, f.x * W)), y);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawBear(cx, mouthY, scale) {
+  const h = H * Belly.BEAR_H * scale * (1 + 0.15 * popT);
   const w = h * BEAR_ASPECT;
+  if (!bearImg.complete || !bearImg.naturalWidth) {
+    ctx.font = `${Math.round(h)}px "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
+    ctx.fillText('🐻', cx, mouthY);
+    return;
+  }
   ctx.drawImage(bearImg, cx - w / 2, mouthY - h * BEAR_MOUTH_Y, w, h);
+}
+
+function foodUnit() {
+  return Math.min(W * 0.2, H * 0.13);
 }
 
 function draw() {
   ctx.clearRect(0, 0, W, H);
-  const u = Math.min(W * 0.2, H * 0.13);
+  const u = foodUnit();
 
   ctx.font = `${Math.round(u * 0.55)}px "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   for (const f of state.foods) {
-    ctx.fillText(FOOD_EMOJI[f.kind], f.x * W, f.y * H);
+    ctx.fillText(f.syringe ? '💉' : FOOD_EMOJI[f.kind], f.x * W, f.y * H);
   }
 
-  drawBear(state.playerX * W, H * Belly.PLAYER_Y, state.belly / state.config.target);
+  drawBear(state.playerX * W, H * Belly.PLAYER_Y, Belly.sizeScale(state));
+  drawFx();
 }
 
 function sync() {
@@ -186,14 +423,16 @@ function sync() {
   targetEl.textContent = state.config.target;
   missedEl.textContent = state.missed;
   allowedEl.textContent = state.config.allowedMiss;
+  totalEl.textContent = Belly.total(state);
 
   const texts = {
     ready: ['뱃살 키우기', '화면을 좌우로 드래그해서 음식을 받으세요\n탭해서 시작'],
     clear: [`스테이지 ${state.stage} 클리어!`, '탭해서 다음 스테이지'],
-    over: ['게임 오버', `스테이지 ${state.stage}에서 졌어요\n탭해서 처음부터`],
+    over: ['게임 오버', `스테이지 ${state.stage}에서 졌어요\n총 ${Belly.total(state)}개 먹음`],
   };
   const t = texts[state.status];
   overlay.hidden = !t;
+  rankEl.hidden = state.status !== 'over';
   if (t) {
     ovTitle.textContent = t[0];
     ovText.textContent = t[1];
@@ -203,12 +442,144 @@ function sync() {
 function primaryAction() {
   if (state.status === 'ready') state = begin(state);
   else if (state.status === 'clear') state = nextStage(state);
-  else if (state.status === 'over') state = begin(createState(1));
 }
+
+// ---- 순위 ----
+// 공용 순위: Firebase Realtime Database 주소를 넣으면 모두가 같은 순위를 봄.
+// 비워두면 이 기기(localStorage)에만 저장됨.
+// 예) 'https://내프로젝트-default-rtdb.firebaseio.com'
+const LEADERBOARD_URL = 'https://belly-b899e-default-rtdb.firebaseio.com';
+const LOCAL_KEY = 'belly-scores';
+const NAME_KEY = 'belly-name';
+
+const rankEl = document.getElementById('rank');
+const rankListEl = document.getElementById('rankList');
+const nameInput = document.getElementById('nameInput');
+const rankMsg = document.getElementById('rankMsg');
+const rankForm = document.getElementById('rankForm');
+const submitBtn = document.getElementById('submitBtn');
+const restartBtn = document.getElementById('restartBtn');
+
+function sortScores(list) {
+  return list.sort((a, b) => b.score - a.score || b.stage - a.stage || a.t - b.t);
+}
+
+async function fetchScores() {
+  if (!LEADERBOARD_URL) {
+    try { return sortScores(JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]')).slice(0, 10); } catch (err) { return []; }
+  }
+  const res = await fetch(`${LEADERBOARD_URL}/scores.json?orderBy="score"&limitToLast=10`);
+  if (!res.ok) throw new Error('fetch failed');
+  return sortScores(Object.values((await res.json()) || {})).slice(0, 10);
+}
+
+async function saveScore(entry) {
+  if (!LEADERBOARD_URL) {
+    let list = [];
+    try { list = JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]'); } catch (err) { /* ignore */ }
+    list.push(entry);
+    try { localStorage.setItem(LOCAL_KEY, JSON.stringify(sortScores(list).slice(0, 50))); } catch (err) { /* ignore */ }
+    return;
+  }
+  const res = await fetch(`${LEADERBOARD_URL}/scores.json`, { method: 'POST', body: JSON.stringify(entry) });
+  if (!res.ok) throw new Error('save failed');
+}
+
+let myEntry = null;
+
+function renderScores(list, message) {
+  rankListEl.textContent = '';
+  if (message) {
+    const li = document.createElement('li');
+    li.textContent = message;
+    li.style.listStyle = 'none';
+    rankListEl.appendChild(li);
+    return;
+  }
+  let markedMine = false;
+  for (const s of list) {
+    const li = document.createElement('li');
+    li.textContent = `${s.name} — ${s.score}개 (스테이지 ${s.stage})`;
+    if (myEntry && !markedMine && s.t === myEntry.t && s.name === myEntry.name) {
+      li.className = 'me';
+      markedMine = true;
+    }
+    rankListEl.appendChild(li);
+  }
+  if (!list.length) renderScores([], '아직 기록이 없어요');
+}
+
+async function refreshScores() {
+  renderScores([], '불러오는 중...');
+  try {
+    const list = await fetchScores();
+    renderScores(list);
+    return list;
+  } catch (err) {
+    renderScores([], '순위를 불러오지 못했어요');
+    return null;
+  }
+}
+
+// 순위(10위 안)를 갱신할 수 있을 때만 이름 입력칸을 보여줌
+async function onGameOver() {
+  const run = state;
+  myEntry = null;
+  rankForm.hidden = true;
+  rankMsg.textContent = '';
+  submitBtn.disabled = false;
+  submitBtn.textContent = '순위 등록';
+  try { nameInput.value = localStorage.getItem(NAME_KEY) || ''; } catch (err) { /* ignore */ }
+  const list = await refreshScores();
+  if (run !== state || !list) return; // 그 사이 다시 시작했거나 불러오기 실패
+  const score = Belly.total(run);
+  if (score <= 0) return;
+  if (list.length < 10 || score > list[list.length - 1].score) {
+    // 점수가 같으면 더 높은 스테이지가 위, 그래도 같으면 먼저 기록한 사람이 위
+    const place = list.filter((s) => s.score > score || (s.score === score && s.stage >= run.stage)).length + 1;
+    rankMsg.textContent = `🏆 지금 ${place}위!`;
+    rankForm.hidden = false;
+    nameInput.focus();
+  } else {
+    rankMsg.textContent = '아쉽게 10위 안에 들지 못했어요';
+  }
+}
+
+submitBtn.addEventListener('click', async () => {
+  if (myEntry) return;
+  const name = nameInput.value.trim().slice(0, 8) || '익명';
+  try { localStorage.setItem(NAME_KEY, name); } catch (err) { /* ignore */ }
+  myEntry = { name, score: Belly.total(state), stage: state.stage, t: Date.now() };
+  submitBtn.disabled = true;
+  submitBtn.textContent = '등록 중...';
+  try {
+    await saveScore(myEntry);
+    submitBtn.textContent = '등록 완료';
+    await refreshScores();
+  } catch (err) {
+    myEntry = null;
+    submitBtn.disabled = false;
+    submitBtn.textContent = '다시 시도';
+  }
+});
+
+restartBtn.addEventListener('click', () => { state = begin(createState(1)); });
+
+// 순위 패널 안의 터치는 게임 드래그/시작 처리로 넘어가지 않게 함
+for (const type of ['pointerdown', 'pointerup', 'pointercancel']) {
+  rankEl.addEventListener(type, (e) => e.stopPropagation());
+}
+
+document.getElementById('mute').addEventListener('click', (e) => {
+  muted = !muted;
+  e.currentTarget.textContent = muted ? '🔇' : '🔊';
+  if (master) master.gain.value = muted ? 0 : 1;
+});
 
 let drag = null;
 
 stageEl.addEventListener('pointerdown', (e) => {
+  ensureAudio(); // 브라우저 정책상 터치 이후에야 소리를 낼 수 있음
   try { stageEl.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
   drag = { startX: e.clientX, startPlayerX: state.playerX, moved: false };
 });
@@ -221,7 +592,7 @@ stageEl.addEventListener('pointermove', (e) => {
 });
 
 function endDrag() {
-  if (drag && !drag.moved && state.status !== 'running') primaryAction();
+  if (drag && !drag.moved && state.status !== 'running' && state.status !== 'over') primaryAction();
   if (state.status === 'running') state.targetX = state.playerX;
   drag = null;
 }
@@ -234,7 +605,16 @@ let last = 0;
 function frame(t) {
   const dt = Math.min(t - last, 100);
   last = t;
+  if (W > 0) {
+    state.screenRatio = H / W;
+    state.foodHalf = foodUnit() * 0.55 / 2 / W;
+  }
+  const prev = state.status;
   update(state, dt, Math.random);
+  if (prev !== 'over' && state.status === 'over') onGameOver();
+  if (state.status === 'running') startBgm(); else stopBgm();
+  handleEvents();
+  updateFx(dt);
   sync();
   draw();
   requestAnimationFrame(frame);
