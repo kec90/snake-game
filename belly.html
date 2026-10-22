@@ -54,6 +54,7 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
     <div class="overlay" id="overlay">
       <img class="logo" id="ovLogo" src="title.png" alt="통통배꼽이의 뱃살 꾸미기!">
       <img class="logo small" id="ovOver" src="gameover.png" alt="게임 오버" hidden>
+      <img class="logo small" id="ovClear" src="clear.png" alt="스테이지 클리어" hidden>
       <h1 id="ovTitle"></h1>
       <p id="ovText"></p>
       <div class="rank" id="rank" hidden>
@@ -203,6 +204,7 @@ const overlay = document.getElementById('overlay');
 const ovTitle = document.getElementById('ovTitle');
 const ovLogo = document.getElementById('ovLogo');
 const ovOver = document.getElementById('ovOver');
+const ovClear = document.getElementById('ovClear');
 const ovText = document.getElementById('ovText');
 const stageNoEl = document.getElementById('stageNo');
 const eatenEl = document.getElementById('eaten');
@@ -441,6 +443,7 @@ function sync() {
   overlay.hidden = !t;
   ovLogo.hidden = state.status !== 'ready';
   ovOver.hidden = state.status !== 'over';
+  ovClear.hidden = state.status !== 'clear';
   rankEl.hidden = state.status !== 'over';
   if (t) {
     ovTitle.hidden = state.status === 'ready';
