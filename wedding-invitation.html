@@ -180,9 +180,13 @@ footer .names { font-size: 36px; margin: 0; }
 .intro.untie .hint, .intro.untie .intro-names { animation: fadeOut .4s ease forwards; }
 .intro.untie .door-l { animation: doorL 1.2s cubic-bezier(.65,0,.25,1) 1.6s forwards; }
 .intro.untie .door-r { animation: doorR 1.2s cubic-bezier(.65,0,.25,1) 1.6s forwards; }
-.bow-photo { position: absolute; z-index: 4; width: calc(var(--bw) * 1.15); left: 50%; margin-left: calc(var(--bw) * -.575); top: 50%; transform: translateY(-38%); height: auto; animation: breathe 3.4s ease-in-out infinite; pointer-events: none; }
-.intro.untie .bow-photo { animation: photoOut 1.1s ease-in .25s forwards; }
-@keyframes photoOut { 0% { transform: translateY(-38%) scale(1); opacity: 1; } 100% { transform: translateY(-38%) scale(.7) rotate(-6deg); opacity: 0; } }
+.has-photo { --pw: min(78vw, 340px); }
+.bow-photo[hidden] { display: none; }
+.bow-photo { position: absolute; z-index: 4; width: var(--pw); height: auto; left: 50%; top: 50%; margin-left: calc(var(--pw) * -.532); margin-top: calc(var(--pw) * -.184); transform-origin: 53.2% 15.5%; pointer-events: none; animation: breathe 3.6s ease-in-out infinite;
+  filter: drop-shadow(0 16px 14px rgba(70,55,35,.28)) drop-shadow(0 3px 3px rgba(70,55,35,.28)); }
+.has-photo .band { height: calc(var(--pw) * .1); margin-top: calc(var(--pw) * -.05); background: linear-gradient(180deg, #e4dcc7 0%, #f6f0e2 30%, #fcf8ee 52%, #ece3cf 78%, #d9cfb6 100%); }
+.intro.untie .bow-photo { animation: photoOut 1.3s cubic-bezier(.5,0,.8,.5) .15s forwards; }
+@keyframes photoOut { 0% { transform: scale(1); opacity: 1; } 22% { transform: scale(1.06) rotate(1.5deg); opacity: 1; } 100% { transform: translateY(40px) scale(.55) rotate(-9deg); opacity: 0; filter: blur(3px); } }
 @keyframes breathe { 50% { transform: scale(1.025); } }
 @keyframes pulse { 50% { opacity: .45; } }
 @keyframes pull { 0% { transform: scale(1); } 45% { transform: scale(1.07); } 100% { transform: scale(.97); } }
@@ -427,7 +431,7 @@ const INVITE = {
   /* 리본이 풀린 뒤 나오는 짧은 영상. 주소를 넣으면 그 영상이 재생되고, 비워 두면 예시 영상(글자와 꽃잎)이 나옵니다. */
   introVideoSrc: "",
   /* 실제 리본 사진을 쓰려면 배경이 투명한 PNG 주소를 넣으세요. 비어 있으면 코드로 그린 리본이 나옵니다. */
-  bowImage: "",
+  bowImage: "ribbon-bow.webp",
   /* 실제 사진은 src에 주소를 넣으세요. 비어 있으면 예시 색감 이미지가 나옵니다. */
   photos: [
     { src: "", bg: "linear-gradient(150deg,#f6c9a8,#e39a8c)", alt: "봄 산책" },
@@ -581,7 +585,7 @@ scene($("heroScene"), { petals: 16, orbs: 4, top: "#fbeadb", mid: "#f6d6bf", bot
   const later = (fn, ms) => { timers.push(setTimeout(fn, ms)); };
   const clear = () => { timers.forEach(clearTimeout); timers = []; };
   const mmdd = (n) => String(n).padStart(2, "0");
-  if (INVITE.bowImage) { const ph = $("bowPhoto"); ph.src = INVITE.bowImage; ph.hidden = false; intro.querySelector(".bow").hidden = true; }
+  if (INVITE.bowImage) { const ph = $("bowPhoto"); ph.src = INVITE.bowImage; ph.hidden = false; intro.querySelector(".bow").style.display = "none"; intro.classList.add("has-photo"); }
   $("introNames").textContent = `${g.name} · ${b.name}`;
   $("fl1").textContent = `${when.getFullYear()}. ${mmdd(when.getMonth() + 1)}. ${mmdd(when.getDate())}`;
   $("fl3").textContent = `${g.name} & ${b.name}`;
