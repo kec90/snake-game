@@ -139,6 +139,62 @@ footer .names { font-size: 36px; margin: 0; }
 .toast[hidden] { display: none; }
 @media (max-width: 380px) { .names { font-size: 50px; } .grid { gap: 6px; } }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+/* ribbon intro */
+.intro { position: fixed; inset: 0; z-index: 100; perspective: 1400px; overflow: hidden; --bw: min(80vw, 400px); }
+.intro.out { opacity: 0; pointer-events: none; transition: opacity .9s ease; }
+.door { position: absolute; top: 0; bottom: 0; width: 50%; z-index: 2; background-color: #eee8dc;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .55 0 0 0 0 .49 0 0 0 0 .4 0 0 0 .3 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"), linear-gradient(180deg, #f3eee4, #e9e2d4); }
+.door-l { left: 0; transform-origin: 0 50%; box-shadow: inset -12px 0 16px -12px rgba(110,90,60,.3); }
+.door-r { right: 0; transform-origin: 100% 50%; box-shadow: inset 12px 0 16px -12px rgba(110,90,60,.3); }
+.band { position: absolute; z-index: 3; top: 50%; height: calc(var(--bw) * .2); margin-top: calc(var(--bw) * -.1); width: 50%;
+  background: linear-gradient(180deg, #e3dac5 0%, #f8f3e8 28%, #fffdf8 50%, #efe7d5 76%, #dcd1b8 100%); box-shadow: 0 6px 12px -6px rgba(90,70,40,.35); }
+.band-l { left: 0; } .band-r { right: 0; }
+.bow { position: absolute; z-index: 4; width: var(--bw); left: 50%; margin-left: calc(var(--bw) / -2); top: 50%; margin-top: calc(var(--bw) * -.3467); aspect-ratio: 300 / 240; height: auto; overflow: visible; transform-origin: 50% 43%; animation: breathe 3.4s ease-in-out infinite; pointer-events: none; }
+.intro-names { position: absolute; z-index: 4; left: 0; right: 0; top: calc(14% + env(safe-area-inset-top, 0px)); text-align: center; font-family: var(--f-en); font-style: italic; font-size: 20px; letter-spacing: .12em; color: #8d7d66; margin: 0; }
+.hint { position: absolute; z-index: 4; left: 0; right: 0; bottom: calc(13% + env(safe-area-inset-bottom, 0px)); text-align: center; font-family: var(--f-hand); font-size: 26px; color: #8d7d66; margin: 0; animation: pulse 2.2s ease-in-out infinite; }
+.untie-btn { position: absolute; inset: 0; z-index: 5; width: 100%; background: transparent; border: 0; cursor: pointer; }
+.skip { position: absolute; z-index: 9; top: max(14px, env(safe-area-inset-top, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); background: rgba(255,250,244,.7); color: #6b5a45; border: 1px solid rgba(120,100,70,.25); border-radius: 999px; padding: 6px 14px; font-size: 13px; cursor: pointer; min-height: 36px; }
+.film { position: absolute; inset: 0; z-index: 1; background: #2a1914; opacity: 0; transition: opacity .8s ease; overflow: hidden; }
+.film.on { opacity: 1; }
+.film canvas, .film video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.leak { position: absolute; inset: -25%; mix-blend-mode: screen; background: radial-gradient(circle at 20% 30%, rgba(255,190,140,.4), transparent 45%), radial-gradient(circle at 80% 70%, rgba(255,140,150,.3), transparent 45%); animation: leak 6s ease-in-out infinite alternate; }
+.bar { position: absolute; left: 0; right: 0; height: 9%; background: #120a08; z-index: 2; }
+.bar.t { top: 0; } .bar.b { bottom: 0; }
+.fl { position: absolute; z-index: 1; left: 0; right: 0; top: 50%; transform: translateY(-50%); text-align: center; color: #fbe9d8; opacity: 0; transition: opacity 1s ease; padding: 0 24px; line-height: 1.5; }
+.fl.on { opacity: 1; }
+.fl1 { font-family: var(--f-en); font-style: italic; font-size: 36px; letter-spacing: .1em; }
+.fl2 { font-family: var(--f-hand); font-size: 38px; }
+.fl3 small { display: block; font-family: var(--f-en); font-style: italic; font-size: 18px; letter-spacing: .12em; opacity: .85; }
+.fl3 b { display: block; font-family: var(--f-hand); font-weight: 400; font-size: 58px; line-height: 1.2; }
+.flash { position: absolute; inset: 0; z-index: 8; background: #fff8ec; opacity: 0; pointer-events: none; transition: opacity .45s ease; }
+.flash.on { opacity: 1; }
+.intro.untie .bow { animation: pull .35s ease-out forwards; }
+.intro.untie .loop-l { transform-origin: 150px 104px; animation: loopL .8s cubic-bezier(.5,0,.9,.4) .3s forwards; }
+.intro.untie .loop-r { transform-origin: 150px 104px; animation: loopR .8s cubic-bezier(.5,0,.9,.4) .3s forwards; }
+.intro.untie .tail-l { transform-origin: 150px 112px; animation: tailL .7s ease-in .15s forwards; }
+.intro.untie .tail-r { transform-origin: 150px 112px; animation: tailR .7s ease-in .15s forwards; }
+.intro.untie .knot { transform-origin: 150px 105px; animation: knotOut .4s ease-in .85s forwards; }
+.intro.untie .band-l { animation: bandL 1s cubic-bezier(.6,0,.3,1) .8s forwards; }
+.intro.untie .band-r { animation: bandR 1s cubic-bezier(.6,0,.3,1) .8s forwards; }
+.intro.untie .hint, .intro.untie .intro-names { animation: fadeOut .4s ease forwards; }
+.intro.untie .door-l { animation: doorL 1.2s cubic-bezier(.65,0,.25,1) 1.6s forwards; }
+.intro.untie .door-r { animation: doorR 1.2s cubic-bezier(.65,0,.25,1) 1.6s forwards; }
+@keyframes breathe { 50% { transform: scale(1.025); } }
+@keyframes pulse { 50% { opacity: .45; } }
+@keyframes pull { 0% { transform: scale(1); } 45% { transform: scale(1.07); } 100% { transform: scale(.97); } }
+@keyframes loopL { to { transform: rotate(-38deg) scale(.04); opacity: 0; } }
+@keyframes loopR { to { transform: rotate(38deg) scale(.04); opacity: 0; } }
+@keyframes tailL { to { transform: translate(-14px, 34px) rotate(-16deg); opacity: 0; } }
+@keyframes tailR { to { transform: translate(14px, 34px) rotate(16deg); opacity: 0; } }
+@keyframes knotOut { 40% { transform: scale(1.25); } 100% { transform: scale(0); opacity: 0; } }
+@keyframes bandL { to { transform: translateX(-105%); } }
+@keyframes bandR { to { transform: translateX(105%); } }
+@keyframes fadeOut { to { opacity: 0; } }
+@keyframes doorL { 0% { transform: rotateY(0); opacity: 1; } 75% { opacity: 1; } 100% { transform: rotateY(-96deg); opacity: 0; } }
+@keyframes doorR { 0% { transform: rotateY(0); opacity: 1; } 75% { opacity: 1; } 100% { transform: rotateY(96deg); opacity: 0; } }
+@keyframes leak { from { transform: translate(-4%, -3%) rotate(0deg); } to { transform: translate(4%, 3%) rotate(8deg); } }
+@media (prefers-reduced-motion: reduce) { .bow, .hint, .leak { animation: none; } }
 </style>
 
 <div class="wrap">
@@ -269,6 +325,49 @@ footer .names { font-size: 36px; margin: 0; }
   </footer>
 </div>
 
+<div class="intro" id="intro" role="dialog" aria-label="청첩장 열기">
+  <div class="film" id="film">
+    <canvas id="filmCanvas" aria-hidden="true"></canvas>
+    <div class="leak" aria-hidden="true"></div>
+    <div class="fl fl1" id="fl1"></div>
+    <div class="fl fl2">한 편의 영화 같은 하루에<br>초대합니다</div>
+    <div class="fl fl3"><small>We are getting married</small><b id="fl3"></b></div>
+    <div class="bar t"></div><div class="bar b"></div>
+  </div>
+  <div class="door door-l"></div>
+  <div class="door door-r"></div>
+  <div class="band band-l"></div>
+  <div class="band band-r"></div>
+  <p class="intro-names" id="introNames"></p>
+  <svg class="bow" viewBox="0 0 300 240" aria-hidden="true">
+    <defs>
+      <linearGradient id="gA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fffdf7"/><stop offset=".55" stop-color="#efe7d6"/><stop offset="1" stop-color="#ddd1b8"/></linearGradient>
+      <linearGradient id="gB" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f9f4e8"/><stop offset="1" stop-color="#e2d8c2"/></linearGradient>
+      <linearGradient id="gT" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f8f2e4"/><stop offset="1" stop-color="#e0d5bd"/></linearGradient>
+      <linearGradient id="gK" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#e6dcc6"/><stop offset=".45" stop-color="#fffdf6"/><stop offset="1" stop-color="#dfd3ba"/></linearGradient>
+      <filter id="sh" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="7" stdDeviation="6" flood-color="#6b5a45" flood-opacity=".3"/></filter>
+      <g id="loopG">
+        <path d="M146 100 C118 52 62 30 30 56 C6 78 22 128 74 128 C108 128 134 114 146 108 Z" fill="url(#gA)" stroke="rgba(150,130,100,.3)" stroke-width="1"/>
+        <path d="M140 100 C118 66 78 52 52 66 C40 76 48 106 78 112 C104 116 128 108 140 104 Z" fill="url(#gB)" opacity=".85"/>
+      </g>
+      <path id="tailP" d="M142 112 C122 150 96 192 58 232 L112 224 C132 190 150 150 156 114 Z" fill="url(#gT)" stroke="rgba(150,130,100,.3)" stroke-width="1"/>
+    </defs>
+    <g filter="url(#sh)">
+      <g class="tail-l"><use href="#tailP"/></g>
+      <g class="tail-r"><use href="#tailP" transform="translate(300 0) scale(-1 1)"/></g>
+      <g class="loop-l"><use href="#loopG"/></g>
+      <g class="loop-r"><use href="#loopG" transform="translate(300 0) scale(-1 1)"/></g>
+      <g class="knot">
+        <rect x="136" y="88" width="28" height="34" rx="12" fill="url(#gK)" stroke="rgba(150,130,100,.35)" stroke-width="1"/>
+        <path d="M140 98 C148 102 154 102 160 98 M140 108 C148 112 154 112 160 108" stroke="rgba(150,130,100,.35)" fill="none" stroke-width="1"/>
+      </g>
+    </g>
+  </svg>
+  <p class="hint">리본을 눌러 열어보세요</p>
+  <button class="untie-btn" id="untie" type="button" aria-label="리본을 풀어 청첩장 열기"></button>
+  <button class="skip" id="skip" type="button">건너뛰기</button>
+  <div class="flash" id="flash"></div>
+</div>
 <div class="lightbox" id="lb" hidden role="dialog" aria-modal="true" aria-label="사진 크게 보기">
   <button class="lb-btn lb-close" id="lbClose" type="button" aria-label="닫기">✕</button>
   <button class="lb-btn lb-prev" id="lbPrev" type="button" aria-label="이전 사진">‹</button>
@@ -300,6 +399,8 @@ const INVITE = {
   /* 실제 영상 주소(mp4 등)를 넣으면 액자 안에서 소리 없이 자동 반복 재생됩니다. 비워 두면 예시 화면이 나옵니다. */
   videoSrc: "",
   videoCaption: "함께 걸어온 길",
+  /* 리본이 풀린 뒤 나오는 짧은 영상. 주소를 넣으면 그 영상이 재생되고, 비워 두면 예시 영상(글자와 꽃잎)이 나옵니다. */
+  introVideoSrc: "",
   /* 실제 사진은 src에 주소를 넣으세요. 비어 있으면 예시 색감 이미지가 나옵니다. */
   photos: [
     { src: "", bg: "linear-gradient(150deg,#f6c9a8,#e39a8c)", alt: "봄 산책" },
@@ -376,7 +477,7 @@ $("accts").addEventListener("click", (e) => {
 const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 function scene(canvas, opt) {
   const ctx = canvas.getContext("2d");
-  let w = 0, h = 0, dpr = 1, raf = 0, visible = true, t0 = performance.now();
+  let w = 0, h = 0, dpr = 1, raf = 0, visible = true, stopped = false, t0 = performance.now();
   const rnd = (a, c) => a + Math.random() * (c - a);
   const petals = Array.from({ length: opt.petals }, () => ({ x: Math.random(), y: Math.random(), s: rnd(5, 11), v: rnd(.018, .045), sw: rnd(.4, 1.2), ph: rnd(0, 6.28), r: rnd(0, 6.28), c: opt.pc[(Math.random() * opt.pc.length) | 0] }));
   const orbs = Array.from({ length: opt.orbs }, () => ({ x: Math.random(), y: Math.random(), r: rnd(.06, .16), v: rnd(.01, .03), ph: rnd(0, 6.28) }));
@@ -399,11 +500,12 @@ function scene(canvas, opt) {
       ctx.fillStyle = p.c; ctx.beginPath(); ctx.ellipse(0, 0, p.s, p.s * .55, 0, 0, 6.283); ctx.fill(); ctx.restore();
     });
   }
-  function loop(now) { if (visible) draw(now); raf = requestAnimationFrame(loop); }
+  function loop(now) { if (stopped) return; if (visible) draw(now); raf = requestAnimationFrame(loop); }
   size();
   if (window.ResizeObserver) new ResizeObserver(() => { size(); if (reduce) draw(performance.now()); }).observe(canvas);
   if (window.IntersectionObserver) new IntersectionObserver((e) => { visible = e[0].isIntersecting; }, { threshold: 0 }).observe(canvas);
   if (reduce) draw(performance.now() + 4000); else raf = requestAnimationFrame(loop);
+  return () => { stopped = true; cancelAnimationFrame(raf); };
 }
 scene($("heroScene"), { petals: 16, orbs: 4, top: "#fbeadb", mid: "#f6d6bf", bot: "#f2c4a8", glow: "rgba(255,246,232,.75)", pc: ["rgba(214,140,130,.7)", "rgba(246,200,180,.85)", "rgba(255,250,244,.8)"] });
 
@@ -442,6 +544,61 @@ scene($("heroScene"), { petals: 16, orbs: 4, top: "#fbeadb", mid: "#f6d6bf", bot
   let sx = null;
   lb.addEventListener("touchstart", (e) => { sx = e.touches[0].clientX; }, { passive: true });
   lb.addEventListener("touchend", (e) => { if (sx === null) return; const dx = e.changedTouches[0].clientX - sx; if (Math.abs(dx) > 50) show(cur + (dx < 0 ? 1 : -1)); sx = null; });
+})();
+
+/* ===== 리본 인트로: 리본 풀기 → 짧은 영상 → 청첩장 ===== */
+(function () {
+  const intro = $("intro"); if (!intro) return;
+  const root = document.documentElement, film = $("film"), flash = $("flash");
+  let state = "idle", timers = [], stopScene = null;
+  const later = (fn, ms) => { timers.push(setTimeout(fn, ms)); };
+  const clear = () => { timers.forEach(clearTimeout); timers = []; };
+  const mmdd = (n) => String(n).padStart(2, "0");
+  $("introNames").textContent = `${g.name} · ${b.name}`;
+  $("fl1").textContent = `${when.getFullYear()}. ${mmdd(when.getMonth() + 1)}. ${mmdd(when.getDate())}`;
+  $("fl3").textContent = `${g.name} & ${b.name}`;
+  root.style.overflow = "hidden"; document.body.style.overflow = "hidden";
+
+  function done() {
+    clear();
+    if (stopScene) stopScene();
+    intro.classList.add("out");
+    setTimeout(() => { intro.remove(); root.style.overflow = ""; document.body.style.overflow = ""; window.scrollTo(0, 0); }, 950);
+  }
+  function finish() {
+    if (state === "finishing") return;
+    state = "finishing"; clear();
+    flash.classList.add("on");
+    later(() => { film.hidden = true; done(); }, 480);
+  }
+  function startFilm() {
+    film.classList.add("on");
+    if (INVITE.introVideoSrc) {
+      const v = document.createElement("video");
+      v.src = INVITE.introVideoSrc; v.muted = true; v.autoplay = true; v.playsInline = true;
+      v.setAttribute("muted", ""); v.setAttribute("playsinline", "");
+      v.addEventListener("ended", finish); v.addEventListener("error", finish);
+      film.insertBefore(v, film.firstChild); v.play().catch(() => {});
+      later(finish, 12000);
+      return;
+    }
+    stopScene = scene($("filmCanvas"), { petals: 30, orbs: 6, top: "#3a231d", mid: "#6a3d36", bot: "#2a1914", glow: "rgba(255,214,176,.35)", pc: ["rgba(255,236,222,.85)", "rgba(240,176,160,.85)", "rgba(255,250,244,.8)"] });
+    const lines = film.querySelectorAll(".fl");
+    [[400, 1900], [2100, 3700], [3900, 5500]].forEach(([a, z], i) => {
+      later(() => lines[i].classList.add("on"), a);
+      later(() => lines[i].classList.remove("on"), z);
+    });
+    later(finish, 5700);
+  }
+  $("untie").addEventListener("click", () => {
+    if (state !== "idle") return;
+    state = "opening";
+    if (reduce) { done(); return; }
+    intro.classList.add("untie");
+    later(startFilm, 1500);
+    later(() => { intro.querySelectorAll(".door,.band").forEach((el) => { el.hidden = true; }); }, 3000);
+  });
+  $("skip").addEventListener("click", (e) => { e.stopPropagation(); if (reduce) done(); else finish(); });
 })();
 
 /* ===== 참석 회신 · 방명록 (공유 저장소가 있으면 사용, 없으면 이 기기에만 저장) ===== */
