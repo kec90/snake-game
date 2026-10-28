@@ -1,0 +1,517 @@
+<title>도윤 서현 청첩장</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Nanum+Pen+Script&family=Cormorant+Garamond:ital,wght@1,400;1,500&display=swap">
+<style>
+/* Layout: 하나의 좁은 세로 스크롤 청첩장. 가운데 정렬 본문 + 아치형 영상 액자. 따뜻한 살구·장미·세이지 팔레트. */
+:root {
+  --paper: #fcf4ea;
+  --paper-2: #f7e6d5;
+  --peach: #f2c6a8;
+  --rose: #d68c82;
+  --sage: #8f9f80;
+  --ink: #57392d;
+  --ink-soft: #8a6a5a;
+  --line: #e8cdb8;
+  --white: #fffaf4;
+  --f-body: "Gowun Batang", "Nanum Myeongjo", "Apple SD Gothic Neo", serif;
+  --f-hand: "Nanum Pen Script", "Gowun Batang", cursive;
+  --f-en: "Cormorant Garamond", Georgia, serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 16px;
+  line-height: 1.85;
+  padding-block: 0;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  -webkit-text-size-adjust: 100%;
+}
+.wrap { max-width: 480px; margin: 0 auto; }
+section { padding-block: 56px; text-align: center; }
+section + section { border-top: 1px dashed var(--line); }
+h2 { font-family: var(--f-hand); font-weight: 400; font-size: 34px; line-height: 1.2; margin: 0 0 6px; color: var(--rose); text-wrap: balance; }
+.eyebrow { font-family: var(--f-en); font-style: italic; font-size: 17px; letter-spacing: .08em; color: var(--ink-soft); margin: 0 0 4px; }
+p { margin: 0 0 14px; text-wrap: pretty; }
+.soft { color: var(--ink-soft); }
+.sample-note { font-size: 12px; color: var(--ink-soft); margin-top: 18px; }
+:focus-visible { outline: 2px solid var(--rose); outline-offset: 3px; }
+button { font-family: inherit; }
+
+/* hero */
+.hero { position: relative; padding: 0; border: 0 !important; margin-inline: calc(-1 * max(16px, env(safe-area-inset-left, 0px))); overflow: hidden; background: var(--paper-2); }
+.hero canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.hero-inner { position: relative; max-width: 480px; margin: 0 auto; padding: 84px 24px 72px; }
+.hero .eyebrow { font-size: 19px; }
+.names { font-family: var(--f-hand); font-size: 58px; line-height: 1.05; margin: 14px 0 10px; color: var(--ink); }
+.names .amp { display: block; font-family: var(--f-en); font-style: italic; font-size: 30px; color: var(--rose); line-height: 1.2; }
+.hero-date { font-size: 17px; letter-spacing: .04em; }
+.hero-place { font-size: 14px; color: var(--ink-soft); }
+.scroll-hint { margin-top: 30px; font-family: var(--f-en); font-style: italic; color: var(--ink-soft); }
+
+/* greeting */
+.greeting p { font-size: 16.5px; }
+.rule { width: 1px; height: 44px; background: var(--rose); margin: 0 auto 22px; opacity: .6; }
+.families { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 30px; }
+.fam { background: var(--white); border: 1px solid var(--line); border-radius: 18px; padding: 20px 10px; min-width: 0; }
+.fam .role { font-family: var(--f-en); font-style: italic; color: var(--rose); font-size: 17px; margin: 0; }
+.fam .parents { margin: 4px 0 0; font-size: 14px; color: var(--ink-soft); line-height: 1.6; }
+.fam .who { font-family: var(--f-hand); font-size: 30px; line-height: 1.3; margin: 2px 0 0; }
+
+/* video frame */
+.frame { width: min(300px, 82%); aspect-ratio: 3 / 4; margin: 26px auto 0; border-radius: 150px 150px 18px 18px; overflow: hidden; position: relative; background: var(--peach); box-shadow: 0 0 0 7px var(--white), 0 0 0 8px var(--line), 0 18px 40px -18px rgba(87,57,45,.45); }
+.frame canvas, .frame video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.frame .cap { position: absolute; left: 0; right: 0; bottom: 16px; text-align: center; font-family: var(--f-hand); font-size: 26px; color: var(--white); text-shadow: 0 1px 8px rgba(87,57,45,.5); }
+
+/* gallery */
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 24px; }
+.tile { aspect-ratio: 1; border: 0; padding: 0; border-radius: 10px; cursor: pointer; position: relative; overflow: hidden; background-size: cover; background-position: center; }
+.tile:nth-child(1), .tile:nth-child(6) { grid-column: span 2; grid-row: span 2; aspect-ratio: auto; }
+.tile span { position: absolute; left: 8px; bottom: 6px; font-family: var(--f-hand); font-size: 20px; color: var(--white); text-shadow: 0 1px 6px rgba(87,57,45,.5); }
+.tile:hover { filter: brightness(1.04); }
+.lightbox { position: fixed; inset: 0; z-index: 50; background: rgba(60,38,30,.88); display: flex; align-items: center; justify-content: center; padding: 20px; }
+.lightbox[hidden] { display: none; }
+.lb-img { width: min(92vw, 440px); aspect-ratio: 3 / 4; max-height: 78vh; border-radius: 14px; background-size: cover; background-position: center; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 14px; font-family: var(--f-hand); font-size: 26px; color: var(--white); text-shadow: 0 1px 8px rgba(0,0,0,.4); }
+.lb-btn { position: absolute; background: var(--white); color: var(--ink); border: 0; width: 44px; height: 44px; border-radius: 50%; font-size: 20px; cursor: pointer; }
+.lb-close { top: max(14px, env(safe-area-inset-top, 0px)); right: max(14px, env(safe-area-inset-right, 0px)); }
+.lb-prev { left: max(10px, env(safe-area-inset-left, 0px)); top: 50%; }
+.lb-next { right: max(10px, env(safe-area-inset-right, 0px)); top: 50%; }
+
+/* calendar */
+.cal { width: min(340px, 100%); margin: 22px auto 0; background: var(--white); border: 1px solid var(--line); border-radius: 18px; padding: 18px 14px 14px; }
+.cal-title { font-family: var(--f-en); font-style: italic; font-size: 22px; margin: 0 0 10px; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px 0; font-variant-numeric: tabular-nums; }
+.cal-grid div { height: 36px; line-height: 36px; font-size: 14px; border-radius: 50%; }
+.cal-grid .dow { font-size: 12px; color: var(--ink-soft); height: 26px; line-height: 26px; }
+.cal-grid .sun { color: var(--rose); }
+.cal-grid .day { background: var(--rose); color: var(--white); font-weight: 700; }
+.dday { margin-top: 22px; font-family: var(--f-hand); font-size: 28px; line-height: 1.4; }
+.dday b { color: var(--rose); font-weight: 400; font-size: 38px; }
+
+/* map */
+.map { width: 100%; aspect-ratio: 16 / 10; border-radius: 18px; margin-top: 22px; position: relative; overflow: hidden; border: 1px solid var(--line); background: #f3e3cf; }
+.map svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.venue { font-size: 19px; font-weight: 700; margin: 24px 0 0; }
+.addr { font-size: 14.5px; color: var(--ink-soft); margin: 0 0 14px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.btn { background: var(--white); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: 9px 18px; font-size: 14px; cursor: pointer; text-decoration: none; min-height: 40px; display: inline-flex; align-items: center; }
+.btn:hover { border-color: var(--rose); }
+.btn.primary { background: var(--rose); border-color: var(--rose); color: var(--white); }
+.how { text-align: left; margin-top: 26px; display: grid; gap: 14px; }
+.how div { display: grid; grid-template-columns: 64px 1fr; gap: 10px; font-size: 14.5px; line-height: 1.7; }
+.how dt { font-family: var(--f-hand); font-size: 22px; color: var(--rose); line-height: 1.5; }
+.how dd { margin: 0; }
+
+/* accounts */
+.accts { display: grid; gap: 12px; margin-top: 22px; text-align: left; }
+.acct { background: var(--white); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.acct .t { min-width: 0; font-size: 14.5px; line-height: 1.6; overflow-wrap: anywhere; }
+.acct .t small { display: block; color: var(--rose); font-size: 12.5px; }
+.acct .btn { padding: 6px 14px; min-height: 36px; font-size: 13px; }
+
+/* forms */
+form { text-align: left; display: grid; gap: 16px; margin-top: 22px; }
+fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+legend, label.l { font-size: 14px; color: var(--ink-soft); padding: 0; margin-bottom: 6px; display: block; }
+.seg { display: flex; gap: 8px; flex-wrap: wrap; }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg label { padding: 8px 16px; border: 1px solid var(--line); border-radius: 999px; background: var(--white); cursor: pointer; font-size: 14.5px; min-height: 40px; display: inline-flex; align-items: center; }
+.seg input:checked + label { background: var(--rose); border-color: var(--rose); color: var(--white); }
+.seg input:focus-visible + label { outline: 2px solid var(--rose); outline-offset: 2px; }
+input[type=text], input[type=number], textarea { width: 100%; font: inherit; font-size: 16px; color: var(--ink); background: var(--white); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; }
+textarea { resize: vertical; min-height: 96px; }
+.notice { font-size: 13px; color: var(--ink-soft); text-align: center; min-height: 20px; margin: 0; }
+.notice.ok { color: var(--sage); }
+.msgs { display: grid; gap: 12px; margin-top: 30px; text-align: left; }
+.msg { background: var(--white); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; }
+.msg b { font-weight: 700; }
+.msg time { font-size: 12px; color: var(--ink-soft); margin-left: 8px; }
+.msg p { margin: 4px 0 0; font-size: 15px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
+.empty { color: var(--ink-soft); font-size: 14px; text-align: center; }
+
+footer { padding: 40px 0 56px; text-align: center; border-top: 1px dashed var(--line); }
+footer .names { font-size: 36px; margin: 0; }
+.toast { position: fixed; left: 50%; bottom: max(24px, env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--white); padding: 10px 20px; border-radius: 999px; font-size: 14px; z-index: 60; }
+.toast[hidden] { display: none; }
+@media (max-width: 380px) { .names { font-size: 50px; } .grid { gap: 6px; } }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+
+<div class="wrap">
+  <section class="hero" id="hero">
+    <canvas id="heroScene" aria-hidden="true"></canvas>
+    <div class="hero-inner">
+      <p class="eyebrow">We are getting married</p>
+      <h1 class="names" id="names"></h1>
+      <p class="hero-date" id="heroDate"></p>
+      <p class="hero-place" id="heroPlace"></p>
+      <p class="scroll-hint">scroll ↓</p>
+    </div>
+  </section>
+
+  <section class="greeting">
+    <div class="rule"></div>
+    <p class="eyebrow">Invitation</p>
+    <h2>소중한 분들을 초대합니다</h2>
+    <p class="soft" id="greetingText"></p>
+    <div class="families" id="families"></div>
+    <p class="sample-note">※ 모든 이름과 문구는 예시입니다.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Our moving days</p>
+    <h2>우리의 날들</h2>
+    <p class="soft">소리 없이 흐르는 화면으로 두 사람의 계절을 담았어요.</p>
+    <div class="frame" id="frame">
+      <div class="cap" id="frameCap">함께 걸어온 길</div>
+    </div>
+    <p class="sample-note" id="videoNote">※ 예시 영상입니다. 실제 영상으로 교체할 수 있어요.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Gallery</p>
+    <h2>우리의 사진</h2>
+    <p class="soft">사진을 누르면 크게 볼 수 있어요.</p>
+    <div class="grid" id="grid"></div>
+    <p class="sample-note">※ 예시 이미지입니다.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Calendar</p>
+    <h2>예식 일시</h2>
+    <p id="calText"></p>
+    <div class="cal" aria-label="예식 달력">
+      <p class="cal-title" id="calTitle"></p>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+    <p class="dday" id="dday"></p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Location</p>
+    <h2>오시는 길</h2>
+    <div class="map" role="img" aria-label="예식장 위치 예시 지도">
+      <svg viewBox="0 0 320 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <rect width="320" height="200" fill="#f3e3cf"/>
+        <path d="M-10 150 C60 120 110 170 180 130 S290 90 340 110" stroke="#f9f0e4" stroke-width="22" fill="none"/>
+        <path d="M70 -10 L110 210" stroke="#f9f0e4" stroke-width="14" fill="none"/>
+        <path d="M240 -10 L200 210" stroke="#f9f0e4" stroke-width="10" fill="none"/>
+        <circle cx="262" cy="46" r="26" fill="#cfd8bf"/>
+        <circle cx="42" cy="48" r="18" fill="#cfd8bf"/>
+        <g transform="translate(160 84)"><path d="M0 34 C-22 8 -20 -22 0 -22 C20 -22 22 8 0 34Z" fill="#d68c82"/><circle cx="0" cy="-5" r="8" fill="#fffaf4"/></g>
+      </svg>
+    </div>
+    <p class="venue" id="venue"></p>
+    <p class="addr" id="addr"></p>
+    <div class="row">
+      <button class="btn" type="button" id="copyAddr">주소 복사</button>
+      <a class="btn" id="naver" target="_blank" rel="noopener">네이버 지도</a>
+      <a class="btn" id="kakao" target="_blank" rel="noopener">카카오맵</a>
+    </div>
+    <dl class="how" id="how"></dl>
+  </section>
+
+  <section>
+    <p class="eyebrow">With love</p>
+    <h2>마음 전하실 곳</h2>
+    <p class="soft">참석이 어려워 마음만 전하시는 분들을 위해<br>계좌번호를 안내드립니다.</p>
+    <div class="accts" id="accts"></div>
+    <p class="sample-note">※ 예시 계좌번호입니다.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">RSVP</p>
+    <h2>참석 여부 알려주세요</h2>
+    <p class="soft">원활한 준비를 위해 미리 알려주시면 감사하겠습니다.</p>
+    <form id="rsvpForm">
+      <div><label class="l" for="rName">성함</label><input type="text" id="rName" maxlength="20" required autocomplete="name"></div>
+      <fieldset><legend>어느 쪽 손님이신가요?</legend>
+        <div class="seg">
+          <input type="radio" name="side" id="sideG" value="신랑측" checked><label for="sideG">신랑측</label>
+          <input type="radio" name="side" id="sideB" value="신부측"><label for="sideB">신부측</label>
+        </div></fieldset>
+      <fieldset><legend>참석 여부</legend>
+        <div class="seg">
+          <input type="radio" name="attend" id="atY" value="참석" checked><label for="atY">참석할게요</label>
+          <input type="radio" name="attend" id="atN" value="불참"><label for="atN">아쉽지만 불참해요</label>
+        </div></fieldset>
+      <div><label class="l" for="rCount">참석 인원 (본인 포함)</label><input type="number" id="rCount" min="1" max="10" value="1" inputmode="numeric"></div>
+      <fieldset><legend>식사 여부</legend>
+        <div class="seg">
+          <input type="radio" name="meal" id="mY" value="식사함" checked><label for="mY">식사할게요</label>
+          <input type="radio" name="meal" id="mN" value="식사 안 함"><label for="mN">식사는 안 해요</label>
+        </div></fieldset>
+      <div class="row"><button class="btn primary" type="submit">전달하기</button></div>
+      <p class="notice" id="rsvpNote" role="status"></p>
+    </form>
+  </section>
+
+  <section>
+    <p class="eyebrow">Guestbook</p>
+    <h2>축하의 한마디</h2>
+    <form id="gbForm">
+      <div><label class="l" for="gName">이름</label><input type="text" id="gName" maxlength="20" required autocomplete="name"></div>
+      <div><label class="l" for="gMsg">메시지</label><textarea id="gMsg" maxlength="300" required placeholder="두 사람에게 따뜻한 말을 남겨주세요"></textarea></div>
+      <div class="row"><button class="btn primary" type="submit">남기기</button></div>
+      <p class="notice" id="gbNote" role="status"></p>
+    </form>
+    <div class="msgs" id="msgs"></div>
+  </section>
+
+  <footer>
+    <p class="eyebrow">Thank you</p>
+    <p class="names" id="footNames"></p>
+    <p class="soft">함께해 주셔서 감사합니다.</p>
+  </footer>
+</div>
+
+<div class="lightbox" id="lb" hidden role="dialog" aria-modal="true" aria-label="사진 크게 보기">
+  <button class="lb-btn lb-close" id="lbClose" type="button" aria-label="닫기">✕</button>
+  <button class="lb-btn lb-prev" id="lbPrev" type="button" aria-label="이전 사진">‹</button>
+  <div class="lb-img" id="lbImg"></div>
+  <button class="lb-btn lb-next" id="lbNext" type="button" aria-label="다음 사진">›</button>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/* ===== 한 곳에서 바꾸는 청첩장 정보 (모두 예시) ===== */
+const INVITE = {
+  groom: { name: "김도윤", father: "김정호", mother: "박미경", rel: "아들" },
+  bride: { name: "이서현", father: "이상철", mother: "최영희", rel: "딸" },
+  date: "2027-04-17T14:00:00",
+  venue: "온기 웨딩홀 3층 그랜드홀",
+  address: "서울특별시 예시구 예시로 123",
+  greeting: "따스한 봄날, 오래도록 서로를 아껴온 두 사람이\n하나의 길을 함께 걷기로 했습니다.\n귀한 걸음으로 자리를 빛내주시면\n더없는 기쁨으로 간직하겠습니다.",
+  how: [
+    ["지하철", "예시역 3번 출구에서 도보 5분"],
+    ["버스", "간선 100, 200번 · 예시사거리 하차"],
+    ["주차", "웨딩홀 지하 주차장 2시간 무료 주차"]
+  ],
+  accounts: [
+    { group: "신랑측", bank: "예시은행", no: "000-0000-000000", holder: "김도윤" },
+    { group: "신랑측 혼주", bank: "예시은행", no: "000-0000-000001", holder: "김정호" },
+    { group: "신부측", bank: "예시은행", no: "000-0000-000002", holder: "이서현" },
+    { group: "신부측 혼주", bank: "예시은행", no: "000-0000-000003", holder: "이상철" }
+  ],
+  /* 실제 영상 주소(mp4 등)를 넣으면 액자 안에서 소리 없이 자동 반복 재생됩니다. 비워 두면 예시 화면이 나옵니다. */
+  videoSrc: "",
+  videoCaption: "함께 걸어온 길",
+  /* 실제 사진은 src에 주소를 넣으세요. 비어 있으면 예시 색감 이미지가 나옵니다. */
+  photos: [
+    { src: "", bg: "linear-gradient(150deg,#f6c9a8,#e39a8c)", alt: "봄 산책" },
+    { src: "", bg: "linear-gradient(160deg,#cfd8bf,#8f9f80)", alt: "초록 오후" },
+    { src: "", bg: "linear-gradient(140deg,#f9dfc4,#d68c82)", alt: "첫 여행" },
+    { src: "", bg: "linear-gradient(170deg,#efc3b6,#b97c72)", alt: "노을" },
+    { src: "", bg: "linear-gradient(150deg,#f3d5b5,#c9a07a)", alt: "카페" },
+    { src: "", bg: "linear-gradient(135deg,#f4cdb9,#a9b79a)", alt: "함께" }
+  ]
+};
+
+const $ = (id) => document.getElementById(id);
+const wd = ["일","월","화","수","목","금","토"];
+const when = new Date(INVITE.date);
+const toast = (t) => { const el = $("toast"); el.textContent = t; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => { el.hidden = true; }, 2000); };
+const copyText = async (text, ok) => {
+  try { await navigator.clipboard.writeText(text); toast(ok); }
+  catch (e) { const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select(); let done = false; try { done = document.execCommand("copy"); } catch (_) {} ta.remove(); toast(done ? ok : "길게 눌러 직접 복사해 주세요"); }
+};
+const store = { get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
+
+/* ===== 기본 정보 채우기 ===== */
+const g = INVITE.groom, b = INVITE.bride;
+const hh = when.getHours(), mm = when.getMinutes();
+const timeText = (hh < 12 ? "오전 " : "오후 ") + (hh % 12 || 12) + "시" + (mm ? " " + mm + "분" : "");
+const dateText = `${when.getFullYear()}년 ${when.getMonth() + 1}월 ${when.getDate()}일 ${wd[when.getDay()]}요일 ${timeText}`;
+$("names").innerHTML = `${g.name}<span class="amp">&amp;</span>${b.name}`;
+$("footNames").textContent = `${g.name} · ${b.name}`;
+$("heroDate").textContent = dateText;
+$("heroPlace").textContent = INVITE.venue;
+$("greetingText").textContent = INVITE.greeting;
+$("greetingText").style.whiteSpace = "pre-line";
+$("calText").innerHTML = `${dateText}<br><span class="soft">${INVITE.venue}</span>`;
+$("venue").textContent = INVITE.venue;
+$("addr").textContent = INVITE.address;
+$("naver").href = "https://map.naver.com/p/search/" + encodeURIComponent(INVITE.address);
+$("kakao").href = "https://map.kakao.com/?q=" + encodeURIComponent(INVITE.address);
+$("copyAddr").addEventListener("click", () => copyText(INVITE.address, "주소를 복사했어요"));
+$("frameCap").textContent = INVITE.videoCaption;
+
+$("families").innerHTML = [[g, "신랑"], [b, "신부"]].map(([p, role]) =>
+  `<div class="fam"><p class="role">${role}</p><p class="parents">${p.father} · ${p.mother}의 ${p.rel}</p><p class="who">${p.name}</p></div>`).join("");
+
+$("how").innerHTML = INVITE.how.map(([t, d]) => `<div><dt>${t}</dt><dd>${d}</dd></div>`).join("");
+
+$("accts").innerHTML = INVITE.accounts.map((a, i) =>
+  `<div class="acct"><div class="t"><small>${a.group}</small>${a.bank} ${a.no}<br>예금주 ${a.holder}</div><button class="btn" type="button" data-i="${i}">복사</button></div>`).join("");
+$("accts").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-i]"); if (!btn) return;
+  const a = INVITE.accounts[+btn.dataset.i];
+  copyText(`${a.bank} ${a.no} ${a.holder}`, "계좌번호를 복사했어요");
+});
+
+/* ===== 달력 + D-day ===== */
+(function () {
+  const y = when.getFullYear(), m = when.getMonth();
+  $("calTitle").textContent = `${y}. ${String(m + 1).padStart(2, "0")}`;
+  const first = new Date(y, m, 1).getDay(), last = new Date(y, m + 1, 0).getDate();
+  let html = wd.map((d, i) => `<div class="dow${i === 0 ? " sun" : ""}">${d}</div>`).join("");
+  for (let i = 0; i < first; i++) html += "<div></div>";
+  for (let d = 1; d <= last; d++) {
+    const cls = d === when.getDate() ? "day" : ((first + d - 1) % 7 === 0 ? "sun" : "");
+    html += `<div class="${cls}">${d}</div>`;
+  }
+  $("calGrid").innerHTML = html;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const target = new Date(y, m, when.getDate());
+  const diff = Math.round((target - today) / 86400000);
+  $("dday").innerHTML = diff > 0 ? `${g.name}, ${b.name}의 결혼식이<br><b>${diff}일</b> 남았습니다`
+    : diff === 0 ? "오늘, 두 사람이 결혼합니다" : "함께해 주셔서 감사합니다";
+})();
+
+/* ===== 움직이는 화면 (영상 액자·히어로) ===== */
+const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function scene(canvas, opt) {
+  const ctx = canvas.getContext("2d");
+  let w = 0, h = 0, dpr = 1, raf = 0, visible = true, t0 = performance.now();
+  const rnd = (a, c) => a + Math.random() * (c - a);
+  const petals = Array.from({ length: opt.petals }, () => ({ x: Math.random(), y: Math.random(), s: rnd(5, 11), v: rnd(.018, .045), sw: rnd(.4, 1.2), ph: rnd(0, 6.28), r: rnd(0, 6.28), c: opt.pc[(Math.random() * opt.pc.length) | 0] }));
+  const orbs = Array.from({ length: opt.orbs }, () => ({ x: Math.random(), y: Math.random(), r: rnd(.06, .16), v: rnd(.01, .03), ph: rnd(0, 6.28) }));
+  function size() { dpr = Math.min(window.devicePixelRatio || 1, 2); w = canvas.clientWidth; h = canvas.clientHeight; canvas.width = Math.max(1, w * dpr); canvas.height = Math.max(1, h * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+  function draw(now) {
+    const t = (now - t0) / 1000;
+    const k = (Math.sin(t * .18) + 1) / 2;
+    const gr = ctx.createLinearGradient(0, 0, 0, h);
+    gr.addColorStop(0, opt.top); gr.addColorStop(.55 + k * .1, opt.mid); gr.addColorStop(1, opt.bot);
+    ctx.fillStyle = gr; ctx.fillRect(0, 0, w, h);
+    orbs.forEach((o) => {
+      const x = (o.x + Math.sin(t * o.v + o.ph) * .08) * w, y = ((o.y - t * o.v * .3) % 1 + 1) % 1 * h, r = o.r * Math.max(w, h) * .6;
+      const rg = ctx.createRadialGradient(x, y, 0, x, y, r);
+      rg.addColorStop(0, opt.glow); rg.addColorStop(1, "rgba(255,240,225,0)");
+      ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill();
+    });
+    petals.forEach((p) => {
+      const y = ((p.y + t * p.v) % 1.1 - .05) * h, x = (p.x + Math.sin(t * p.sw + p.ph) * .05) * w;
+      ctx.save(); ctx.translate(x, y); ctx.rotate(p.r + t * p.sw * .6); ctx.scale(1, .55 + .45 * Math.cos(t * p.sw + p.ph));
+      ctx.fillStyle = p.c; ctx.beginPath(); ctx.ellipse(0, 0, p.s, p.s * .55, 0, 0, 6.283); ctx.fill(); ctx.restore();
+    });
+  }
+  function loop(now) { if (visible) draw(now); raf = requestAnimationFrame(loop); }
+  size();
+  if (window.ResizeObserver) new ResizeObserver(() => { size(); if (reduce) draw(performance.now()); }).observe(canvas);
+  if (window.IntersectionObserver) new IntersectionObserver((e) => { visible = e[0].isIntersecting; }, { threshold: 0 }).observe(canvas);
+  if (reduce) draw(performance.now() + 4000); else raf = requestAnimationFrame(loop);
+}
+scene($("heroScene"), { petals: 16, orbs: 4, top: "#fbeadb", mid: "#f6d6bf", bot: "#f2c4a8", glow: "rgba(255,246,232,.75)", pc: ["rgba(214,140,130,.7)", "rgba(246,200,180,.85)", "rgba(255,250,244,.8)"] });
+
+(function () {
+  const frame = $("frame");
+  if (INVITE.videoSrc) {
+    const v = document.createElement("video");
+    v.src = INVITE.videoSrc; v.muted = true; v.loop = true; v.autoplay = true; v.playsInline = true;
+    v.setAttribute("muted", ""); v.setAttribute("playsinline", ""); v.controls = false; v.disablePictureInPicture = true;
+    v.setAttribute("aria-label", "청첩장 영상");
+    frame.insertBefore(v, frame.firstChild);
+    v.play().catch(() => {});
+    $("videoNote").hidden = true;
+  } else {
+    const c = document.createElement("canvas"); c.setAttribute("aria-label", "예시 영상: 꽃잎이 날리는 노을빛 화면"); c.setAttribute("role", "img");
+    frame.insertBefore(c, frame.firstChild);
+    scene(c, { petals: 26, orbs: 6, top: "#f3b9a0", mid: "#e59a8d", bot: "#a7717a", glow: "rgba(255,226,196,.7)", pc: ["rgba(255,250,244,.85)", "rgba(250,208,190,.9)", "rgba(255,226,214,.8)"] });
+  }
+})();
+
+/* ===== 갤러리 ===== */
+(function () {
+  const photos = INVITE.photos;
+  const bgOf = (p) => p.src ? `url("${p.src}")` : p.bg;
+  $("grid").innerHTML = photos.map((p, i) => `<button class="tile" type="button" data-i="${i}" aria-label="${p.alt} 크게 보기" style="background-image:${bgOf(p)}"><span>${p.alt}</span></button>`).join("");
+  let cur = 0;
+  const lb = $("lb");
+  const show = (i) => { cur = (i + photos.length) % photos.length; const p = photos[cur]; $("lbImg").style.backgroundImage = bgOf(p); $("lbImg").textContent = p.alt; };
+  const close = () => { lb.hidden = true; };
+  $("grid").addEventListener("click", (e) => { const t = e.target.closest(".tile"); if (!t) return; show(+t.dataset.i); lb.hidden = false; $("lbClose").focus(); });
+  $("lbClose").addEventListener("click", close);
+  $("lbPrev").addEventListener("click", () => show(cur - 1));
+  $("lbNext").addEventListener("click", () => show(cur + 1));
+  lb.addEventListener("click", (e) => { if (e.target === lb) close(); });
+  document.addEventListener("keydown", (e) => { if (lb.hidden) return; if (e.key === "Escape") close(); if (e.key === "ArrowLeft") show(cur - 1); if (e.key === "ArrowRight") show(cur + 1); });
+  let sx = null;
+  lb.addEventListener("touchstart", (e) => { sx = e.touches[0].clientX; }, { passive: true });
+  lb.addEventListener("touchend", (e) => { if (sx === null) return; const dx = e.changedTouches[0].clientX - sx; if (Math.abs(dx) > 50) show(cur + (dx < 0 ? 1 : -1)); sx = null; });
+})();
+
+/* ===== 참석 회신 · 방명록 (공유 저장소가 있으면 사용, 없으면 이 기기에만 저장) ===== */
+(function () {
+  let db = null, uid = null, shared = false;
+  const fmt = (ts) => { const d = new Date(ts); return `${d.getMonth() + 1}/${d.getDate()}`; };
+  const localMsgs = () => store.get("wi-msgs", []);
+  function renderMsgs(list) {
+    const box = $("msgs");
+    box.textContent = "";
+    if (!list.length) { const p = document.createElement("p"); p.className = "empty"; p.textContent = "첫 번째 축하 메시지를 남겨주세요."; box.appendChild(p); return; }
+    list.slice().sort((a, c) => c.ts - a.ts).forEach((m) => {
+      const d = document.createElement("div"); d.className = "msg";
+      const n = document.createElement("b"); n.textContent = m.name || "손님";
+      const t = document.createElement("time"); t.textContent = fmt(m.ts);
+      const p = document.createElement("p"); p.textContent = m.msg;
+      d.append(n, t, p); box.appendChild(d);
+    });
+  }
+  renderMsgs(localMsgs());
+  const mine = store.get("wi-rsvp", null);
+  if (mine) {
+    $("rName").value = mine.name || "";
+    if (mine.side) document.querySelector(`input[name=side][value="${mine.side}"]`).checked = true;
+    if (mine.attend) document.querySelector(`input[name=attend][value="${mine.attend}"]`).checked = true;
+    if (mine.meal) document.querySelector(`input[name=meal][value="${mine.meal}"]`).checked = true;
+    $("rCount").value = mine.count || 1;
+    $("rsvpNote").textContent = "이미 회신하셨어요. 바꾸려면 다시 전달해 주세요.";
+  }
+
+  async function connect() {
+    try {
+      if (!(window.claude && window.claude.use)) return;
+      const [d, u] = await Promise.all([claude.use("db"), claude.use("user")]);
+      if (!d || !u) return;
+      uid = await u.id();
+      const can = u.can ? await u.can("data.write") : null;
+      if (!uid || can === false) { db = d; uid = null; } else { db = d; shared = true; }
+      d.collection("guestbook").onSnapshot((snap) => {
+        renderMsgs(snap.docs.map((x) => x.data()).concat(shared ? [] : localMsgs()));
+      }, () => {});
+    } catch (e) { /* 저장소가 없으면 기기 저장으로 동작 */ }
+  }
+  connect();
+
+  $("rsvpForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const rec = { name: $("rName").value.trim(), side: f.get("side"), attend: f.get("attend"), count: Math.max(1, Math.min(10, +$("rCount").value || 1)), meal: f.get("meal"), ts: Date.now() };
+    if (!rec.name) return;
+    store.set("wi-rsvp", rec);
+    const note = $("rsvpNote");
+    if (shared) {
+      try { await db.doc("rsvp/" + uid).set(rec); note.className = "notice ok"; note.textContent = "전달되었어요. 감사합니다!"; return; } catch (err) { /* 아래로 */ }
+    }
+    note.className = "notice"; note.textContent = "이 기기에 저장했어요. 공유 저장소에는 연결되지 않았습니다.";
+  });
+
+  $("gbForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const rec = { name: $("gName").value.trim(), msg: $("gMsg").value.trim(), ts: Date.now() };
+    if (!rec.name || !rec.msg) return;
+    const note = $("gbNote");
+    if (shared) {
+      try { await db.doc("guestbook/" + uid).set(rec); note.className = "notice ok"; note.textContent = "메시지를 남겼어요. 다시 쓰면 내용이 바뀝니다."; $("gMsg").value = ""; return; } catch (err) { /* 아래로 */ }
+    }
+    const list = localMsgs(); list.push(rec); store.set("wi-msgs", list);
+    renderMsgs(list);
+    note.className = "notice"; note.textContent = "이 기기에 저장했어요. 공유 저장소에는 연결되지 않았습니다.";
+    $("gMsg").value = "";
+  });
+})();
+</script>
